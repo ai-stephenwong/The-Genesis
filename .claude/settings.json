@@ -1,0 +1,35 @@
+{
+  "permissions": {
+    "allow": [
+      "WebSearch",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:docs.anthropic.com)",
+      "Bash(chmod +x \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/scripts/init-project.sh\")",
+      "Bash(bash -n \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/scripts/init-project.sh\")",
+      "Bash(chmod +x \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/scripts/generate-compliance-report.sh\")",
+      "Bash(DEST=\"/Users/stephen.wong/Projects-AI-Agents/aa-web-revamp\")",
+      "Bash(mkdir -p \"$DEST/.claude\")",
+      "Bash(mkdir -p \"$DEST/agent_docs/generic\")",
+      "Bash(mkdir -p \"$DEST/agent_docs/project/specs\")",
+      "Bash(mkdir -p \"$DEST/reports\")",
+      "Bash(sed -e 's/\\\\[Project Name\\\\]/AA Web Revamp/g' \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/agent_docs/templates/requirements/01-functional.md\")",
+      "Bash(\"/Users/stephen.wong/Projects-AI-Agents/aa-web-revamp/agent_docs/project/requirements/01-functional.md\")",
+      "Bash(gh auth:*)",
+      "Bash(brew install:*)",
+      "Bash(sw_vers)",
+      "Bash(curl -sL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)",
+      "Bash(bash)",
+      "Bash(/opt/homebrew/bin/brew --version)",
+      "Bash(/usr/local/bin/brew --version)",
+      "Bash(sed -e 's/\\\\[Project Name\\\\]/Recruit.com.hk revamp/g' \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/agent_docs/templates/specs/requirements.md\")",
+      "Bash(\"/Users/stephen.wong/Projects-AI-Agents/Recruit-com-hk-revamp-2026/agent_docs/project/specs/requirements.md\")",
+      "Bash(chmod +x \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/scripts/propagate-updates.sh\")",
+      "Bash(bash scripts/propagate-updates.sh --all)"
+    ],
+    "deny": [],
+    "additionalDirectories": [
+      "/Users/stephen.wong/Projects-AI-Agents/-The Genesis",
+      "/Users/stephen.wong/Projects-AI-Agents/-The Genesis/.claude"
+    ]
+  }
+}

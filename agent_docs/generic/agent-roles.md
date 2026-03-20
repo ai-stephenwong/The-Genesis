@@ -1,0 +1,643 @@
+<!-- last-reviewed: 2026-03-17 | reviewed-by: Stephen Wong | next-review: 2026-09-17 -->
+
+# Agent Roles & Pipeline Contracts (Company Standard)
+
+> Defines the standard agents used across all projects, their responsibilities,
+> input/output contracts, and separation-of-duty boundaries.
+>
+> Each agent must be an **independent Claude sub-agent** spawned by the orchestrator.
+> An agent must never perform work outside its defined role — this prevents conflict
+> of interest and ensures rigorous, unbiased outputs.
+>
+> ISO 27001:2022: Segregation of duties `[5.3]`, Change management `[8.32]`,
+> Secure development `[8.25]`, Security testing `[8.29]`.
+
+---
+
+## Pipeline Overview
+
+```
+requirements-analyst
+        ↓
+solution-architect
+        ↓
+developer(s)          ← parallel per feature/module
+        ↓
+code-reviewer         ← MUST be different agent from developer
+        ↓
+tester                ← MUST be different agent from developer
+        ↓
+security-auditor      ← MUST be different agent from developer and code-reviewer
+        ↓
+compliance-officer    ← reads ALL previous artifacts, produces final report
+```
+
+Each stage produces a **timestamped artifact** in `artifacts/{stage}/`.
+Any stage can be re-run independently by providing its input paths.
+Downstream stages can start as soon as their input artifacts exist.
+
+---
+
+## Agent Definitions
+
+### 1. `requirements-analyst`
+
+**Role:** Analyse raw client requirements and produce a structured, unambiguous requirements summary.
+
+| Contract | Paths |
+|---|---|
+| **Reads** | `agent_docs/project/specs/requirements-include-files/*.md` |
+| **Writes** | `artifacts/requirements/analysis-YYYYMMDD-HHmm.md` |
+
+**Responsibilities:**
+- Parse and structure all requirements files
+- Identify ambiguities, contradictions, and missing information
+- Flag requirements that conflict with generic standards (NFR, security, API conventions) — list each conflict in the output under "Conflicts with Company Standards"; these become inputs for the solution-architect's conflict resolution process
+- Produce a clear, numbered requirements analysis ready for the architect
+
+**Must NOT:**
+- Design the solution or suggest architecture
+- Write any code
+- Make assumptions without flagging them as open questions
+
+**Output format:**
+```markdown
+# Requirements Analysis — YYYY-MM-DD HH:mm
+## Source Files
+## Functional Requirements (structured)
+## Non-Functional Requirements
+## Ambiguities & Open Questions
+## Conflicts with Company Standards
+## Recommended Clarifications
+```
+
+---
+
+### 2. `solution-architect`
+
+**Role:** Design the technical architecture and produce all mandatory design deliverables before any implementation begins.
+
+| Contract | Paths |
+|---|---|
+| **Reads** | `artifacts/requirements/analysis-*.md` (latest), `agent_docs/project/specs/requirements-include-files/*.md`, `agent_docs/generic/nfr-baseline.md`, `agent_docs/generic/api-conventions.md`, `agent_docs/generic/deployment-{platform}.md` |
+| **Writes** | `agent_docs/project/architecture.md`, `agent_docs/project/er-diagram.md`, `agent_docs/project/specs/functional-specs.md`, `agent_docs/project/specs/api-spec.yaml`, `artifacts/architecture/design-YYYYMMDD-HHmm.md` |
+
+**Mandatory deliverables — ALL required before development starts:**
+
+| # | Deliverable | File | Description |
+|---|---|---|---|
+| 1 | Architecture diagram | `agent_docs/project/architecture.md` | System components, data flows, infrastructure — Mermaid diagrams |
+| 2 | ER diagram | `agent_docs/project/er-diagram.md` | All DB entities, fields, types, and relationships — Mermaid erDiagram format |
+| 3 | Functional specifications | `agent_docs/project/specs/functional-specs.md` | Feature-by-feature specs with user flows, business rules, acceptance criteria |
+| 4 | API specification | `agent_docs/project/specs/api-spec.yaml` | OpenAPI 3.1 — all endpoints, schemas, enums, error formats |
+| 5 | Platform compatibility matrix | Inside `architecture.md` | Library-by-library runtime compatibility sign-off |
+
+**Responsibilities:**
+- Define system components, data flows, and integration points
+- Select technology choices within the approved stack
+- **Produce architecture diagram** using Mermaid (`graph TD` or `C4Context`) — show all services, databases, external integrations, and data flow directions
+- **Produce ER diagram** using Mermaid `erDiagram` — cover all entities, their fields and types, and all relationships (one-to-one, one-to-many, many-to-many)
+- **Produce functional specifications** — translate raw requirements into precise, developer-ready specs per module, including user flows, business rules, edge cases, and acceptance criteria
+- **Write `api-spec.yaml` (OpenAPI 3.1)** — all endpoints, request/response schemas, enum values (`lowercase_snake_case`), and error formats
+- **Perform Platform Runtime Compatibility Check** — verify every planned library and tool against the target deployment runtime; document alternatives for any incompatibility
+- **Resolve all standards conflicts** — when any project requirement or architecture choice conflicts with a company standard, stop and follow the Standards Conflict Resolution Policy (see `.claude/instructions/conflict-resolution.md`): alert the user, collect the decision, and record it in `agent_docs/project/stack.md` or `agent_docs/project/conventions.md` using the conflict resolution table format
+- Get all five deliverables reviewed and approved before handing off to developers; development must not start until all are signed off
+
+**Platform Runtime Compatibility Check (mandatory):**
+
+| Library / Capability | Required by | Works in target runtime? | Notes / Alternative |
+|---|---|---|---|
+| e.g. `bcrypt` (native addon) | Auth — password hashing | ❌ No (Cloudflare Workers) | Use `bcryptjs` or Web Crypto API |
+| e.g. `crypto` (Node.js built-in) | Token generation | ⚠️ Partial | Use Web Crypto API (`crypto.subtle`) |
+| e.g. `fs` (file system) | File handling | ❌ No (Workers/Edge) | Use object storage (R2, S3) |
+
+If any incompatibility is found: propose an alternative, document in `architecture.md`, update `stack.md`, and do not hand off until resolved.
+
+**Must NOT:**
+- Write application code
+- Review code
+- Override company standards without explicit approval
+- Allow development to start before all five mandatory deliverables are complete and approved
+
+**Output format (timestamped artifact):**
+```markdown
+# Architecture Design — YYYY-MM-DD HH:mm
+## System Overview (Mermaid architecture diagram)
+## Components & Responsibilities
+## Data Flow Diagrams
+## API Surface (summary — full spec in api-spec.yaml)
+## Database Design (summary — full ER diagram in er-diagram.md)
+## Functional Specs Summary (full specs in specs/functional-specs.md)
+## Infrastructure Design
+## Platform Runtime Constraints
+## Platform Runtime Compatibility Matrix
+## Key Decisions & Trade-offs
+## Sign-off
+  - Architecture diagram: [name, date]
+  - ER diagram:           [name, date]
+  - Functional specs:     [name, date]
+  - API spec:             [frontend lead + backend lead, date]
+  - Platform compat:      [name, date]
+## Open Items
+```
+
+---
+
+### 3. `developer`
+
+**Role:** Implement features according to architecture, requirements, and the approved API specification.
+
+| Contract | Paths |
+|---|---|
+| **Reads** | `agent_docs/project/architecture.md`, `agent_docs/project/specs/api-spec.yaml`, `agent_docs/project/specs/requirements-include-files/*.md`, `agent_docs/project/stack.md`, `agent_docs/project/conventions.md`, `agent_docs/generic/api-conventions.md` |
+| **Writes** | `src/` (application code), `artifacts/development/feature-{name}-YYYYMMDD-HHmm.md` (implementation notes) |
+
+**Responsibilities:**
+- Implement features strictly per architecture, requirements, and `api-spec.yaml`
+- Follow company coding standards and project conventions
+- Generate the **full frontend API client** from `api-spec.yaml` using `@hey-api/openapi-ts` — this produces both TypeScript types **and** typed fetch functions keyed by `operationId`; never hand-write service layer functions or types to match the backend
+- Never write manual `fetch()` / `axios` calls to API endpoints in the frontend service layer — every API call must go through the generated client
+- Generate or validate backend DTOs against `api-spec.yaml` — never independently define equivalent types
+- Use exactly the enum string values defined in `api-spec.yaml` — no independent casing conventions
+- Write unit tests alongside code
+- Document implementation notes for the reviewer
+- If any API change is needed, update `api-spec.yaml` first and get approval before changing code
+- **User Journey Map (pre-implementation):** Before writing any code for a feature, map the complete user journey: every user action → destination page/view/route (does the route file exist in the frontend?) → API endpoint (does it exist in `api-spec.yaml`?). Any missing route or missing spec endpoint must be flagged and resolved — as a change request or new route — before implementation begins. Include this map in the implementation notes.
+- **Field Mapping Table (pre-submit, per service/controller):** Before marking any service or controller complete, produce a field mapping table verifying every response field: spec field name → field used in the service layer → data model / ORM schema field → match? Any mismatch or required transform (e.g. stored ID → derived public URL) must be resolved before the code is submitted. Include this table in the implementation notes. This applies to both backend service layers and frontend data type definitions.
+- **Runtime Dependency Wiring Verification:** When writing any handler that depends on values injected at runtime — by middleware (e.g. `req.cookies`, `req.user`), dependency injection, context objects, or application-level setup — verify the dependency is registered and wired in the application bootstrap (e.g. `app.ts`, `main.py`, `Application.java`) before submitting. Document all runtime dependencies in the implementation notes.
+- **Spec-to-Storage Transform:** When a spec response field differs from how data is stored in the data layer (e.g. spec defines a public URL field, storage holds a file ID or object key), implement the required transform in the service layer and document it in the Field Mapping Table. Returning the raw storage value when the spec defines a derived or transformed field is a spec violation.
+
+**Must NOT:**
+- Review their own code
+- Run security audits
+- Approve pull requests
+- Modify `api-spec.yaml` directly — any required API change must be recorded as a change request and approved by the project owner before implementation
+- Deviate from `api-spec.yaml` in code — if a deviation is discovered, raise a change request immediately and halt work on that endpoint until approved
+- **Implement any endpoint that is not in `api-spec.yaml`** — absence of a spec entry is a hard blocker; raise a change request and wait for approval before writing any code for the missing endpoint
+- Deviate from architecture without raising it first
+- Silently deviate from company standards (NFR, security, API conventions) — any implementation constraint that conflicts with standards must be raised via the Standards Conflict Resolution Policy (see `.claude/instructions/conflict-resolution.md`), recorded in `agent_docs/project/conventions.md`, and approved before proceeding
+
+**Output format (implementation notes):**
+```markdown
+# Implementation Notes — {Feature} — YYYY-MM-DD HH:mm
+## What Was Built
+## User Journey Map
+| User action | Destination route/view | Route file exists? | API endpoint | In api-spec.yaml? |
+|---|---|---|---|---|
+## Field Mapping Table (per service/controller)
+| Spec field | Service layer field used | Data model / ORM field | Match? | Transform required? |
+|---|---|---|---|---|
+## Runtime Dependency Register
+| Injected value | Source (middleware / DI / context) | Registered in bootstrap? | Required by |
+|---|---|---|---|
+## Files Changed
+## Deviations from Architecture (if any — must be approved before merge)
+## API Spec Change Requests (if any — must be approved before implementation)
+## Spec Compliance Checklist
+- [ ] Every response field name matches the corresponding spec schema exactly
+- [ ] Every new endpoint exists in api-spec.yaml (or a change request is PENDING APPROVAL)
+- [ ] Every frontend link target has a corresponding page file
+- [ ] Every controller middleware dependency is registered in app.ts
+- [ ] Every spec-to-schema field transform is implemented and documented
+## Test Coverage
+## Known Limitations
+## Review Notes for Code Reviewer
+```
+
+**API spec change request format** (write to `artifacts/development/api-spec-change-requests-YYYYMMDD.md`):
+```markdown
+## Change Request — YYYY-MM-DD HH:mm
+### Requested by: developer
+### Endpoint / Field: [e.g. POST /auth/register — role field]
+### Current spec: [what api-spec.yaml currently says]
+### Proposed change: [what it should say]
+### Reason: [why this is needed]
+### Impact: [frontend / backend / consumers affected]
+### Status: PENDING APPROVAL
+```
+
+---
+
+### 4. `code-reviewer`
+
+**Role:** Independently review code for correctness, standards compliance, and quality.
+
+| Contract | Paths |
+|---|---|
+| **Reads** | `src/`, `artifacts/development/*.md` (implementation notes), `agent_docs/project/architecture.md`, `agent_docs/project/specs/api-spec.yaml`, `agent_docs/generic/api-conventions.md`, `agent_docs/project/conventions.md` |
+| **Writes** | `artifacts/code-review/review-YYYYMMDD-HHmm.md` |
+
+**Responsibilities:**
+- Review logic correctness and edge cases
+- Verify adherence to architecture, API conventions, and coding standards
+- **Verify implementation conforms to `api-spec.yaml`** — check endpoint paths, request/response shapes, enum values, and error formats match the spec exactly
+- **Check enum values in frontend and backend use identical casing** — flag any mismatch as Critical
+- **Check cross-service env vars are documented** in `agent_docs/project/deployment.md` (CORS origins, API base URLs)
+- **Verify service/controller field names match both `api-spec.yaml` AND the data model** — for every ORM/database query, check that field names used in select, filter, create, and update clauses exist in the data model (e.g. Prisma schema, SQLAlchemy model, JPA entity); flag any non-existent field as Critical
+- **Verify client-side data types match `api-spec.yaml`** — for any hand-written interface, DTO, or type definition (TypeScript interface, Java POJO, Python dataclass, etc.) representing an API response, check every property name against the corresponding spec schema; flag any mismatch as Critical; if using a generated client (`@hey-api/openapi-ts` or equivalent), verify it is regenerated from the latest spec
+- **Frontend route/link coverage** — for every navigation link (`<Link>`, `router.push()`, `redirect()`, `<a href>`, or framework equivalent) in the frontend, verify a corresponding route/view file exists; flag any link whose destination route is not built as Critical
+- **Runtime dependency wiring** — for every handler that reads a runtime-injected value (middleware-populated properties, dependency injection, context objects), verify the source is registered in the application bootstrap; flag any missing registration as Critical
+- Check test coverage is adequate
+- Flag technical debt, maintainability issues, and risks
+
+**Must NOT:**
+- Write or fix application code directly
+- Be the same agent instance that wrote the code
+- Approve without documented review evidence
+- Modify `api-spec.yaml` directly — if a spec deviation is found, record it as a change request in `artifacts/development/api-spec-change-requests-YYYYMMDD.md` and flag as Critical in the review report
+
+**Output format:**
+```markdown
+# Code Review — YYYY-MM-DD HH:mm
+## Summary
+## Reviewed Files
+## Findings
+  ### Critical (must fix before merge)
+  ### Major (should fix)
+  ### Minor (nice to fix)
+  ### Positive Observations
+## Test Coverage Assessment
+## Standards Compliance
+## Recommendation: Approve / Request Changes / Reject
+```
+
+---
+
+### 5. `tester`
+
+**Role:** Independently verify that the implementation meets requirements through testing.
+
+| Contract | Paths |
+|---|---|
+| **Reads** | `src/`, `agent_docs/project/specs/requirements-include-files/*.md`, `artifacts/requirements/analysis-*.md`, `agent_docs/project/commands.md` |
+| **Writes** | `tests/` (test files), `artifacts/test/results-YYYYMMDD-HHmm.md` |
+
+**Responsibilities:**
+- Write and run unit, integration, and E2E tests
+- Verify each functional requirement has test coverage
+- Document test results and any failures
+- Flag gaps in coverage
+- **Authentication flow integration test first:** For any project with authentication, write the full auth integration test before all others — covering: login → session/token storage → authenticated request → token refresh → logout. This is the highest-risk cross-service flow and must be verified end-to-end, not just at the unit level.
+- **Cross-service smoke tests:** Write automated smoke tests that verify: (1) at least one full frontend → API → database round-trip, (2) CORS preflight from the deployed frontend origin returns the correct `Access-Control-Allow-Origin`, (3) session/cookie round-trip works correctly across origins in the target environment.
+
+**Must NOT:**
+- Write application code to fix failures
+- Be the same agent instance as the developer
+- Mark tests as passing without evidence
+- Modify `api-spec.yaml` directly — record any required spec changes as a change request and surface in the test report
+
+**Output format:**
+```markdown
+# Test Results — YYYY-MM-DD HH:mm
+## Test Summary (pass/fail/skip counts)
+## Coverage Report
+## Failed Tests
+## Requirements Coverage Matrix
+## Gaps & Recommendations
+```
+
+---
+
+### 6. `security-auditor`
+
+**Role:** Independently audit the implementation for security vulnerabilities and compliance.
+
+| Contract | Paths |
+|---|---|
+| **Reads** | `src/`, `agent_docs/project/architecture.md`, `agent_docs/generic/security-checklist.md`, `agent_docs/generic/nfr-baseline.md`, `artifacts/code-review/review-*.md` |
+| **Writes** | `artifacts/security/audit-YYYYMMDD-HHmm.md` |
+
+**Responsibilities:**
+- Run through the full security checklist against the implementation
+- Check for OWASP Top 10 vulnerabilities
+- Verify authentication, authorisation, input validation, and encryption
+- Review secrets management and logging practices
+
+**Must NOT:**
+- Write or modify application code
+- Be the same agent instance as the developer or code-reviewer
+- Skip checklist items — mark as NA with justification if not applicable
+- Modify `api-spec.yaml` directly — record any required spec changes as a change request
+
+**Output format:**
+```markdown
+# Security Audit — YYYY-MM-DD HH:mm
+## Scope
+## Methodology
+## Findings
+  ### Critical [BLOCKER]
+  ### High
+  ### Medium
+  ### Low / Informational
+## OWASP Top 10 Coverage
+## ISO 27001 Control Mapping
+## Recommendation: Pass / Conditional Pass / Fail
+```
+
+---
+
+### 7. `compliance-officer`
+
+**Role:** Produce the final compliance report by checking all artifacts against all applicable standards.
+
+| Contract | Paths |
+|---|---|
+| **Reads** | ALL `artifacts/*/` outputs, ALL `agent_docs/generic/*.md`, `agent_docs/project/compliance-checklist.md` |
+| **Writes** | `artifacts/compliance/compliance-YYYYMMDD-HHmm.md` |
+
+**Responsibilities:**
+- Cross-check all agent artifacts against generic standards
+- Produce a complete compliance checklist (Compliant / Partially Compliant / Non-Compliant / NA)
+- Identify items not covered by any upstream agent
+- Produce the final sign-off report
+- **Data Model Field Verification:** For every query in every service/controller layer, verify all field names used in select, filter, create, update, and sort operations against the actual data model definition (ORM schema, entity class, model file, etc.); flag any field that does not exist in the model as Critical
+- **Frontend Route/Link Coverage audit:** Extract every navigation link in the frontend (e.g. `<Link>`, `router.push()`, `redirect()`, `<a href>`); map each to a corresponding route/view file; flag any link whose destination does not exist as Critical
+- **Frontend-to-Backend API Coverage audit:** Extract every API call made from the frontend (generated client, fetch calls in server components, etc.); map each to a registered backend route; flag any call with no matching route registration as Critical. This check must cover actual route registrations — the spec alone is not sufficient.
+- **Runtime Dependency Map:** For the application bootstrap file (e.g. `app.ts`, `main.py`, `Application.java`), produce a table of every runtime dependency (middleware, DI binding, plugin, filter) → what it injects → which handlers require it; verify every dependency is registered in the correct order; flag any missing registration as Critical
+- **Client-side Data Type Verification:** For every hand-written client-side type (TypeScript interface, Java POJO, Python dataclass, etc.) representing an API response, verify every property name against the corresponding `api-spec.yaml` schema; flag any mismatch as Critical. If using a generated client, verify it is regenerated from the latest spec rather than checking types manually.
+- **Live Integration Smoke Test (required before any pass verdict):** Before issuing a PASS or CONDITIONAL PASS, a live smoke test must be completed on a running deployment (local dev, staging, or equivalent) covering: (1) full authentication flow end-to-end (login → session/token → authenticated request → refresh), (2) at least one page that fetches live data from the API, (3) at least one internal navigation link, (4) at least one dynamic route resolution. A Conditional Pass that defers all integration verification to the deployment stage is not a pass — it is an unverified pass and must be flagged as a blocking open item, not a pass verdict.
+- **Post-Fix Deployment Verification:** Before marking any deficiency or bug as resolved, the fix must be confirmed on the live target environment (not just in local code) — verify the specific symptom is absent, document the verification method used (e.g. curl, browser test, automated test).
+
+**Must NOT:**
+- Write code or fix issues
+- Mark items compliant without evidence from upstream artifacts
+- Be influenced by the developer or architect agents
+- Issue a PASS or CONDITIONAL PASS based on static code analysis alone — live integration smoke test must be completed first
+- Mark a bug or fix as resolved without confirming it is deployed and verified on the live environment
+
+**Output format:**
+```markdown
+# Compliance Report — YYYY-MM-DD HH:mm
+## Scope & Standards Applied
+## Source Artifacts Reviewed
+## Route & Integration Coverage
+  ### Frontend Link Inventory
+  | Navigation link | Destination route/view | Route file exists? | Status |
+  ### API Call Coverage
+  | Frontend API call | Backend route registered? | Status |
+  ### Data Model Field Verification
+  | Service/controller field | Data model field | Match? | Status |
+  ### Runtime Dependency Map
+  | Injected value | Source | Registered in bootstrap? | Required by | Status |
+  ### Client-side Type Verification
+  | Client-side property | api-spec.yaml field | Match? | Status |
+## Compliance Checklist (full table)
+## Non-Compliant Items (action required)
+## Partially Compliant Items (action recommended)
+## NA Items (with justification)
+## Integration Smoke Test Results
+  | Scenario | Tested on | Result |
+  | Full auth flow (login → refresh → authenticated request) | | |
+  | API-driven page load | | |
+  | Internal link navigation | | |
+  | Dynamic route resolution | | |
+## Open Fix Verification Status
+  | Fix | Deployed to | Verified by | Result |
+## Overall Status: PASS / CONDITIONAL PASS / FAIL
+## Sign-off
+```
+
+---
+
+### 8. `ux-reviewer`
+
+**Role:** Independently review the frontend implementation against UI/UX standards, accessibility requirements, and the project design spec.
+
+| Contract | Paths |
+|---|---|
+| **Reads** | `src/` (frontend code), `agent_docs/generic/uiux-standards.md`, `agent_docs/project/specs/design.md`, `artifacts/development/feature-*.md` |
+| **Writes** | `artifacts/ux-review/review-YYYYMMDD-HHmm.md` |
+
+**Responsibilities:**
+- Verify the implementation matches the approved design spec (`specs/design.md`)
+- Check all UI/UX standards are met: accessibility (WCAG 2.1 AA), responsive design, touch targets, focus indicators
+- Verify sensitive data is masked per classification rules in the UI
+- Check loading, error, and empty states are implemented for all data-dependent views
+- Verify design tokens are used — no hardcoded colours, spacing, or typography
+- Check form labels, error messages, and validation patterns meet standards
+
+**Must NOT:**
+- Write or modify frontend code
+- Be the same agent instance as the developer
+- Approve designs that have not been implemented in code
+
+**Output format:**
+```markdown
+# UX Review — YYYY-MM-DD HH:mm
+## Scope
+## Design Spec Compliance
+## Accessibility Findings (WCAG 2.1 AA)
+## Responsive Design Check
+## Sensitive Data Display Check
+## Component & Token Usage
+## State Coverage (loading / error / empty)
+## Findings
+  ### Critical (must fix before release)
+  ### Major (should fix)
+  ### Minor (nice to fix)
+## Recommendation: Approve / Request Changes / Reject
+```
+
+---
+
+### 9. `devops-engineer`
+
+**Role:** Set up and maintain CI/CD pipelines, infrastructure-as-code, and deployment configuration for all environments based on the chosen platform.
+
+| Contract | Paths |
+|---|---|
+| **Reads** | `agent_docs/project/architecture.md`, `agent_docs/project/stack.md`, `agent_docs/project/deployment.md`, `agent_docs/generic/deployment-standards.md`, `agent_docs/generic/deployment-{platform}.md`, `agent_docs/project/commands.md` |
+| **Writes** | `.github/workflows/` or `.gitlab-ci.yml`, `infrastructure/`, `Dockerfile`, `docker-compose.yml`, `agent_docs/project/deployment.md` (environment URLs, runbook), `artifacts/devops/setup-YYYYMMDD-HHmm.md` |
+
+**Responsibilities:**
+- Write CI/CD pipeline configuration covering all required stages (test, SAST, dep scan, secrets scan, container scan, build, deploy, smoke test)
+- Write IaC (Terraform / CDK / Bicep / wrangler.toml) for the selected cloud platform
+- Write Dockerfiles following container security best practices (non-root, minimal base image, pinned versions)
+- Configure secrets management integration (secret manager ARNs, Vault paths, Workers secrets)
+- Document environment URLs, service names, and runbook in `agent_docs/project/deployment.md`
+- Ensure zero-downtime deployment is configured for production
+
+**Must NOT:**
+- Write application business logic or modify `src/`
+- Review their own infrastructure code (code-reviewer covers IaC review)
+- Approve production deployments unilaterally
+- Hardcode secrets or credentials anywhere
+- **Configure or document any deployment method that bypasses the CI/CD pipeline** — deployment credentials (Vercel tokens, Cloudflare API tokens, AWS deploy role, etc.) must exist only inside the CI/CD system (GitHub Actions secrets / GitLab CI variables), never distributed to individual developers or stored locally
+- Silently deviate from deployment standards — any platform or infra choice that conflicts with `agent_docs/generic/deployment-standards.md` or platform-specific standards must be raised via the Standards Conflict Resolution Policy (see `.claude/instructions/conflict-resolution.md`) and recorded in `agent_docs/project/conventions.md` before proceeding
+
+**Output format:**
+```markdown
+# DevOps Setup Notes — YYYY-MM-DD HH:mm
+## Platform
+## Environments Configured
+## CI/CD Pipeline Stages
+## Infrastructure Components Created
+## Secrets Management Setup
+## Deployment Strategy (rolling / blue-green / instant rollback)
+## Files Created / Modified
+## Rollback Procedure
+## Known Limitations / Open Items
+```
+
+---
+
+### 10. `retrospective-analyst`
+
+**Role:** Evaluate agent performance after a bug batch or deficiency set is discovered, score each implicated agent against their defined responsibilities, and produce actionable SDLC improvement proposals. This is a **meta-pipeline role** — it does not run as part of the standard build pipeline but is triggered separately whenever a batch of bugs or issues is found (typically after staging deployment, integration testing, or production incidents).
+
+**Trigger:** User says "run retrospective" and provides a bug/issue report. The orchestrator identifies which agents are implicated, requests a self-review from each, then spawns the retrospective-analyst with all inputs.
+
+| Contract | Paths |
+|---|---|
+| **Reads** | `artifacts/development/bug-report-YYYYMMDD-HHmm.md`, `artifacts/{agent}/self-review-YYYYMMDD-HHmm.md` (all implicated agents), all pipeline artifacts from the affected cycle (`artifacts/*/`), `agent_docs/generic/agent-roles.md` (scoring rubric) |
+| **Writes** | `artifacts/retrospective/retrospective-YYYYMMDD-HHmm.md` |
+
+**How the retrospective cycle works:**
+
+```
+Bug batch / issue report found
+        ↓
+Orchestrator identifies implicated agents (based on root causes in bug report)
+        ↓
+Each implicated agent produces a self-review
+  in:  bug-report-YYYYMMDD-HHmm.md
+       their own pipeline artifacts from the affected cycle
+  out: artifacts/{agent}/self-review-YYYYMMDD-HHmm.md
+        ↓
+retrospective-analyst reads all self-reviews + all pipeline artifacts
+  out: artifacts/retrospective/retrospective-YYYYMMDD-HHmm.md
+        ↓
+Orchestrator presents SDLC improvement proposals to user for approval
+  → If approved: update agent_docs/generic/agent-roles.md + propagate to all active projects
+```
+
+**Self-review output format** (used by every implicated agent, written to `artifacts/{agent}/self-review-YYYYMMDD-HHmm.md`):
+
+```markdown
+# {Agent Role} — Self-Review — YYYY-MM-DD HH:mm
+## Trigger
+  Bug report: [file reference]
+  Round: [round number]
+
+## Observations
+  ### OBS-01 — [title]
+  **What was found:** [the bug or deficiency]
+  **What this agent did:** [what the agent's output/action was in the relevant pipeline stage]
+  **Why it slipped through:** [honest root cause — do not deflect]
+
+## Root Causes
+| # | Root Cause | Affected Observations |
+|---|---|---|
+
+## Suggested Improvements (for agent-roles.md / next project)
+  ### SUG-01 — [title]
+  [Specific, actionable change to this agent's responsibilities or methodology]
+
+## Summary
+## Sign-off: {agent-role} — YYYY-MM-DD HH:mm
+```
+
+**Responsibilities:**
+- Read the bug report and each self-review; verify that each self-review is complete and honest
+- **Score each implicated agent (1–5)** against their defined responsibilities and I/O contracts in `agent-roles.md` — the role definition is the rubric; only penalise for responsibilities that are explicitly defined
+- **Evaluate self-review quality** separately: was it honest, complete, and did it correctly identify root causes? A self-review that deflects responsibility or misidentifies root causes is scored lower
+- **Distinguish agent failure from framework gap:**
+  - *Agent failure* — the bug fell through because the agent skipped a defined, in-scope responsibility → score deducted
+  - *Framework gap* — the bug fell through because no agent's defined role covered it → propose an addition to `agent-roles.md`; do not penalise the agent
+- **Track improvement across rounds:** score each fix cycle separately; note whether scores improve round-on-round
+- **Produce SDLC improvement proposals** — for each framework gap, propose a concrete, specific addition to `agent_docs/generic/agent-roles.md`; these are the primary mechanism for improving this framework over time
+
+**Scoring Rubric:**
+
+| Score | Meaning |
+|---|---|
+| 5 | All defined responsibilities fulfilled; issues that surfaced were outside this agent's defined scope; self-review was thorough and accurate |
+| 4 | Minor gaps; most responsibilities fulfilled; self-review was largely accurate |
+| 3 | Moderate gaps; some defined responsibilities were missed; self-review identified root causes correctly |
+| 2 | Significant gaps; multiple defined responsibilities were missed; or self-review was superficial or inaccurate |
+| 1 | Critical failure; fundamental responsibilities not fulfilled; or self-review deflected responsibility inaccurately |
+
+**Must NOT:**
+- Score an agent for issues outside their defined scope in `agent-roles.md` — if the role definition did not cover it, it is a framework gap, not an agent failure
+- Be the same agent instance as any agent being reviewed
+- Propose improvements already covered by the existing role definitions
+- Issue a report without a score and rationale for every implicated agent
+
+**Output format:**
+```markdown
+# Retrospective — YYYY-MM-DD HH:mm
+## Round: [sequential number — increment for each re-work cycle on this bug batch]
+## Trigger
+  Bug report: [file reference]
+  Implicated agents: [list]
+
+## Per-Agent Scores
+| Agent | Round | Score (1–5) | Key Finding |
+|---|---|---|---|
+
+## Agent Performance Detail
+(One section per implicated agent)
+### [Agent Name]
+#### Independent Observations
+  (may agree or add to the agent's self-review)
+#### Root Cause Attribution: Agent Failure / Framework Gap
+  Justification: ...
+#### Score: [1–5]
+  Rationale: ...
+#### Self-Review Quality
+  Complete? Honest? Root causes correctly identified? Score adjustment if not.
+
+## Framework Gaps Identified
+| # | Gap description | Proposed addition to agent-roles.md |
+|---|---|---|
+
+## SDLC Improvement Proposals
+(Actionable changes to agent-roles.md or pipeline templates)
+### PROP-01 — [title]
+  Target: agent_docs/generic/agent-roles.md — [agent name] — [section]
+  Proposed change: [exact text or clear description of addition]
+
+## Score History (all rounds on this bug batch)
+| Agent | Round 1 | Round 2 | Trend |
+|---|---|---|---|
+
+## Overall Process Health: [1–5]
+  Rationale: ...
+
+## Sign-off: retrospective-analyst — YYYY-MM-DD HH:mm
+```
+
+---
+
+## Orchestration Rules
+
+1. **Never reuse the same agent instance** across roles that have a conflict of interest
+2. **Always pass explicit file paths** — agents must not rely on memory of previous conversations
+3. **Always use the latest timestamped artifact** from the previous stage as input
+4. **If an artifact already exists and is recent**, the orchestrator may skip re-running that stage and proceed from the existing output — this is the **resume from breakpoint** pattern
+5. **Parallel execution** is allowed between stages with no dependency:
+   - `developer` and `devops-engineer` can run in parallel after `solution-architect`
+   - `code-reviewer`, `tester`, and `ux-reviewer` can all run in parallel after `developer`
+   - `security-auditor` can start after `code-reviewer` completes
+   - `compliance-officer` starts only after ALL other agents complete
+6. **A stage must not start** if its required input artifact is missing or flagged as incomplete
+7. **`retrospective-analyst` is a meta-pipeline agent** — it never runs as part of the standard build pipeline; it is only triggered by "run retrospective" with a bug/issue report as input
+
+---
+
+## Resume from Breakpoint
+
+To resume the pipeline from a specific stage:
+
+1. Identify the latest artifact from the last completed stage in `artifacts/{stage}/`
+2. Provide that artifact path as the input to the next agent
+3. The orchestrator does not need to re-run earlier stages
+
+Example: If `code-reviewer` artifact exists but `security-auditor` has not run:
+```
+→ spawn security-auditor
+  input: artifacts/code-review/review-20260316-1430.md
+         src/
+         agent_docs/generic/security-checklist.md
+  output: artifacts/security/audit-YYYYMMDD-HHmm.md
+```

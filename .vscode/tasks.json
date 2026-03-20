@@ -1,0 +1,56 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Generate Compliance Report",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/generate-compliance-report.sh",
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "New Claude Code Project",
+      "type": "shell",
+      "command": "${workspaceFolder}/scripts/init-project.sh",
+      "args": ["${input:projectName}", "${input:destPath}", "${input:cloudPlatform}"],
+      "presentation": {
+        "reveal": "always",
+        "panel": "new",
+        "showReuseMessage": false,
+        "clear": true
+      },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "projectName",
+      "type": "promptString",
+      "description": "Project name (e.g. Recruit HK)"
+    },
+    {
+      "id": "destPath",
+      "type": "promptString",
+      "description": "Destination path",
+      "default": "~/Projects-AI-Agents/"
+    },
+    {
+      "id": "cloudPlatform",
+      "type": "pickString",
+      "description": "Cloud / deployment architecture",
+      "options": [
+        { "label": "AWS", "value": "1" },
+        { "label": "GCP", "value": "2" },
+        { "label": "Alibaba Cloud", "value": "3" },
+        { "label": "On-Premise", "value": "4" },
+        { "label": "Multiple (copy all)", "value": "5" }
+      ],
+      "default": "1"
+    }
+  ]
+}

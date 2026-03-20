@@ -1,0 +1,58 @@
+# Trigger: Run Pipeline / Run Agent
+
+Execute this when the user says **"run pipeline"** or **"run agent {name}"**.
+
+---
+
+## Step 1 — Read pipeline configuration
+
+Read `agent_docs/project/pipeline.md` to determine:
+- Active agents and their order
+- Source paths for each agent
+- Pipeline Configuration table (especially `api-spec-required`)
+
+If resuming from a breakpoint, identify the latest artifact from the last completed stage.
+
+---
+
+## Step 2 — Architecture Gate Check (before developer agent only)
+
+Read `api-spec-required` from the Pipeline Configuration table in `pipeline.md`.
+
+**If `api-spec-required: true`**, check ALL four mandatory architecture deliverables before spawning the developer:
+
+| # | File | Check |
+|---|---|---|
+| 1 | `agent_docs/project/architecture.md` | Exists and contains a Mermaid diagram (not just placeholder) |
+| 2 | `agent_docs/project/er-diagram.md` | Exists and contains a Mermaid erDiagram (not just placeholder) |
+| 3 | `agent_docs/project/specs/functional-specs.md` | Exists and contains at least one feature spec (not just placeholder) |
+| 4 | `agent_docs/project/specs/api-spec.yaml` | Exists and contains at least one real path (not just template placeholder) |
+
+If any file is missing or contains only placeholder content → **STOP** and alert:
+
+```
+🚫 Cannot start developer agent — Architecture gate failed.
+
+   The following mandatory deliverables from the solution-architect are missing or incomplete:
+
+     ❌ agent_docs/project/er-diagram.md          — missing
+     ❌ agent_docs/project/specs/functional-specs.md — placeholder only
+     ✅ agent_docs/project/architecture.md
+     ✅ agent_docs/project/specs/api-spec.yaml
+
+   All four deliverables must be complete and approved before development begins.
+
+   Run:  "run agent solution-architect"   to produce the missing deliverables.
+```
+
+If all four files exist with real content → proceed and note: `✅ Architecture gate passed (all 4 deliverables present)`
+
+**If `api-spec-required: false`** → skip the gate check entirely and proceed directly.
+
+---
+
+## Step 3 — Spawn agents
+
+- Spawn the required agent(s) with their defined input paths from `pipeline.md`
+- For independent stages (code-reviewer + tester + ux-reviewer), spawn in parallel
+- Update the Pipeline Status table in `agent_docs/project/pipeline.md` after each stage completes
