@@ -1,4 +1,4 @@
-<!-- last-reviewed: 2026-03-17 | reviewed-by: Stephen Wong | next-review: 2026-09-17 -->
+<!-- last-reviewed: 2026-03-21 | reviewed-by: retrospective-analyst (omnichat-v1 deployment round) | next-review: 2026-09-21 -->
 
 # Agent Roles & Pipeline Contracts (Company Standard)
 
@@ -105,11 +105,17 @@ Downstream stages can start as soon as their input artifacts exist.
 
 **Platform Runtime Compatibility Check (mandatory):**
 
-| Library / Capability | Required by | Works in target runtime? | Notes / Alternative |
-|---|---|---|---|
-| e.g. `bcrypt` (native addon) | Auth — password hashing | ❌ No (Cloudflare Workers) | Use `bcryptjs` or Web Crypto API |
-| e.g. `crypto` (Node.js built-in) | Token generation | ⚠️ Partial | Use Web Crypto API (`crypto.subtle`) |
-| e.g. `fs` (file system) | File handling | ❌ No (Workers/Edge) | Use object storage (R2, S3) |
+| Library / Capability | Required by | Works in target runtime? | CPU budget (est.) | Platform service routing | Notes / Alternative |
+|---|---|---|---|---|---|
+| e.g. `bcrypt` (native addon) | Auth — password hashing | ❌ No (Cloudflare Workers) | N/A | N/A | Use Web Crypto API PBKDF2-SHA256 (`crypto.subtle`) |
+| e.g. `argon2id` (pure-JS, m=65536) | Auth — password hashing | ✅ Yes | ~200–400ms — **EXCEEDS** 10–30ms limit | N/A | Use PBKDF2-SHA256 via `crypto.subtle` — <1ms native |
+| e.g. `@neondatabase/serverless` | Database | ✅ Yes (V8) | Negligible | ❌ HTTP/WebSocket — bypasses Hyperdrive TCP proxy | Use `pg` (node-postgres) + `nodejs_compat` flag |
+| e.g. `crypto` (Node.js built-in) | Token generation | ⚠️ Partial | Negligible | N/A | Use Web Crypto API (`crypto.subtle`) |
+| e.g. `fs` (file system) | File handling | ❌ No (Workers/Edge) | N/A | N/A | Use object storage (R2, S3) |
+
+**CPU budget rule:** For any computationally intensive operation (password hashing, cryptography, large data transforms), estimate the CPU cost and verify it fits within the target Workers plan limit (10ms free / 30ms Bundled / up to 30s Unbound wall-clock). Pure-JS implementations of algorithms designed for native execution (argon2id, bcrypt) almost always exceed Workers CPU limits — prefer Web Crypto API native implementations. A matrix entry of "✅ Yes" without a CPU estimate for an intensive operation is incomplete and must be treated as unverified.
+
+**Platform service routing rule:** For any library that establishes a network connection, verify its transport strategy is compatible with the platform services it must route through. For Cloudflare Hyperdrive: only TCP-based PostgreSQL drivers (`pg`, `postgres.js` with `nodejs_compat`) are intercepted by the proxy — HTTP and WebSocket drivers (e.g. `@neondatabase/serverless` default mode) bypass Hyperdrive entirely.
 
 If any incompatibility is found: propose an alternative, document in `architecture.md`, update `stack.md`, and do not hand off until resolved.
 
@@ -199,6 +205,9 @@ If any incompatibility is found: propose an alternative, document in `architectu
 - [ ] Every frontend link target has a corresponding page file
 - [ ] Every controller middleware dependency is registered in app.ts
 - [ ] Every spec-to-schema field transform is implemented and documented
+- [ ] `npm ci && npm run build` passes from a clean state — no TypeScript errors, no missing packages (required for all frontend projects before submission)
+- [ ] Deployment config framework field matches the build tool in `package.json` — e.g. `vercel.json "framework"` must be `"vite"` for Vite projects, not `"nextjs"` or any other value
+- [ ] `api-spec.yaml` passes YAML validation — no parse errors (run `npx js-yaml api-spec.yaml` or equivalent; unquoted colon-space in strings is a common parse error)
 ## Test Coverage
 ## Known Limitations
 ## Review Notes for Code Reviewer
@@ -356,6 +365,7 @@ If any incompatibility is found: propose an alternative, document in `architectu
 - **Runtime Dependency Map:** For the application bootstrap file (e.g. `app.ts`, `main.py`, `Application.java`), produce a table of every runtime dependency (middleware, DI binding, plugin, filter) → what it injects → which handlers require it; verify every dependency is registered in the correct order; flag any missing registration as Critical
 - **Client-side Data Type Verification:** For every hand-written client-side type (TypeScript interface, Java POJO, Python dataclass, etc.) representing an API response, verify every property name against the corresponding `api-spec.yaml` schema; flag any mismatch as Critical. If using a generated client, verify it is regenerated from the latest spec rather than checking types manually.
 - **Live Integration Smoke Test (required before any pass verdict):** Before issuing a PASS or CONDITIONAL PASS, a live smoke test must be completed on a running deployment (local dev, staging, or equivalent) covering: (1) full authentication flow end-to-end (login → session/token → authenticated request → refresh), (2) at least one page that fetches live data from the API, (3) at least one internal navigation link, (4) at least one dynamic route resolution. A Conditional Pass that defers all integration verification to the deployment stage is not a pass — it is an unverified pass and must be flagged as a blocking open item, not a pass verdict.
+- **Architectural Runtime Assumption Verification (Cloudflare Workers projects):** Before issuing a PASS, verify the Platform Runtime Compatibility Matrix in the architecture artifact includes: (1) an explicit CPU budget estimate for every computationally intensive operation (password hashing, cryptographic operations, large data transforms) confirming it fits within the Workers CPU limit — a matrix entry of "✅ works" without a CPU estimate for an intensive operation is incomplete and must be treated as a **blocking gap, not a pass**; (2) an explicit platform service routing note for every library connecting to a Cloudflare-managed service (Hyperdrive, D1, R2) confirming the driver's transport strategy routes correctly through that service. Absence of these two columns in the architecture artifact is a Critical finding — the compliance officer must block (issue FAIL, not CONDITIONAL PASS) until the architect provides them.
 - **Post-Fix Deployment Verification:** Before marking any deficiency or bug as resolved, the fix must be confirmed on the live target environment (not just in local code) — verify the specific symptom is absent, document the verification method used (e.g. curl, browser test, automated test).
 
 **Must NOT:**
@@ -456,6 +466,17 @@ If any incompatibility is found: propose an alternative, document in `architectu
 - Configure secrets management integration (secret manager ARNs, Vault paths, Workers secrets)
 - Document environment URLs, service names, and runbook in `agent_docs/project/deployment.md`
 - Ensure zero-downtime deployment is configured for production
+- **Cloudflare Workers: complete and document a pre-deploy readiness checklist** before marking the IaC artifact complete:
+  - [ ] All `[PLACEHOLDER: ...]` values replaced with provisioned resource IDs
+  - [ ] `usage_model` key removed (deprecated in wrangler 4.x — omit the key entirely)
+  - [ ] Cron trigger day-of-week uses three-letter abbreviation (`SUN`/`MON`/... not `0`/`1`/...)
+  - [ ] Worker exports all declared handlers via `export default { fetch, scheduled, queue }` — named exports (`export const queue = ...`) are not recognised for queue consumers or scheduled handlers
+  - [ ] `wrangler deploy --dry-run` passes with no errors in all configured environments
+- **Cloudflare Workers: include a cloud resource pre-creation manifest** in the devops setup artifact listing every resource that must exist *before* first deployment, the command to create it, and its provisioned status. Queues, KV namespaces, Hyperdrive configs, and R2 buckets are **not** auto-created by `wrangler deploy` — they must be pre-provisioned:
+
+  | Resource | Type | Environment | Create command | Created? |
+  |---|---|---|---|---|
+  | (example) media-variants-dev | Cloudflare Queue | dev | `wrangler queues create media-variants-dev` | [ ] |
 
 **Must NOT:**
 - Write application business logic or modify `src/`

@@ -1,4 +1,4 @@
-<!-- last-reviewed: 2026-03-16 | reviewed-by: Stephen Wong | next-review: 2026-09-16 -->
+<!-- last-reviewed: 2026-03-21 | reviewed-by: retrospective-analyst (omnichat-v1 deployment round) | next-review: 2026-09-21 -->
 
 # Vercel (Frontend) + Cloudflare (API/Edge) Deployment Best Practices (Company Standard)
 
@@ -49,15 +49,63 @@ If using Vercel Edge Functions (not Node.js runtime):
 
 Before signing off on architecture for a Vercel + Cloudflare project, confirm:
 
-- [ ] Password hashing: using `bcryptjs` or Web Crypto — **not** `bcrypt` (native)
-- [ ] Database connection: using a serverless-compatible driver (Neon, PlanetScale, Supabase, Hyperdrive) — **not** a persistent TCP pool
+- [ ] Password hashing: using Web Crypto API PBKDF2-SHA256 (`crypto.subtle`) — **not** `bcrypt` (native) and **not** pure-JS `argon2id` (pure-JS argon2id with m=65536 requires ~200–400ms CPU — far exceeds the 10–30ms Workers CPU limit)
+- [ ] Database connection: using a TCP-based PostgreSQL driver (`pg` / `postgres.js` with `nodejs_compat` flag) for Hyperdrive compatibility — HTTP/WebSocket drivers such as `@neondatabase/serverless` in default mode bypass Hyperdrive's TCP proxy entirely
 - [ ] Encryption / crypto: using Web Crypto API (`crypto.subtle`) — not Node's `crypto`
 - [ ] File handling: using R2 / external storage — **not** `fs`
 - [ ] Environment variables: accessed via Worker `env` object — **not** `process.env`
 - [ ] All npm dependencies verified compatible with Workers runtime (tested with `wrangler dev`)
 - [ ] No packages with native addons in the dependency tree
 - [ ] Script bundle size checked (use `wrangler deploy --dry-run` or `wrangler build`)
-- [ ] Platform Runtime Compatibility Matrix completed and signed off in `architecture.md`
+- [ ] **CPU budget verified** for every computationally intensive operation — estimate CPU cost and confirm it fits within the target Workers plan limit (10ms free / 30ms Bundled); pure-JS crypto almost always fails this check
+- [ ] **Platform service routing verified** for every library connecting to a Cloudflare service — confirm transport strategy (TCP vs HTTP/WebSocket) is compatible (Hyperdrive requires TCP; D1 requires D1 binding; R2 requires R2 binding or S3-compatible API)
+- [ ] Platform Runtime Compatibility Matrix completed with **CPU budget** and **platform service routing** columns — signed off in `architecture.md`
+
+---
+
+## Cloudflare Workers — First-Deployment Checklist
+
+> Run this checklist before the first `wrangler deploy` for each environment.
+> These errors surface only when cloud credentials are available and an actual deploy is attempted —
+> no code reviewer or compliance officer can catch them through static analysis alone.
+
+### 1. Cloud Resource Pre-Creation
+
+The following resource types are **not auto-created** by `wrangler deploy`. They must exist before the Worker that binds them can be deployed:
+
+| Resource type | Create command | Note |
+|---|---|---|
+| Queue | `wrangler queues create <name>` | Create both primary queue and DLQ |
+| KV Namespace | `wrangler kv namespace create <name>` | Copy the returned namespace ID into `wrangler.toml` |
+| Hyperdrive Config | `wrangler hyperdrive create <name> --connection-string="..."` | Copy the returned config ID into `wrangler.toml` |
+| R2 Bucket | `wrangler r2 bucket create <name>` | |
+
+The devops setup artifact **must** include a pre-creation manifest:
+
+| Resource | Type | Environment | Create command | Created? |
+|---|---|---|---|---|
+| (fill per project) | | dev | | [ ] |
+| (fill per project) | | staging | | [ ] |
+| (fill per project) | | production | | [ ] |
+
+### 2. wrangler.toml Readiness Checklist
+
+Before running `wrangler deploy`:
+
+- [ ] All `[PLACEHOLDER: ...]` values replaced with actual provisioned IDs
+- [ ] `usage_model = "standard"` removed (deprecated in wrangler 4.x — omit the key entirely)
+- [ ] Cron trigger day-of-week uses three-letter abbreviation: `SUN`, `MON`, `TUE`, `WED`, `THU`, `FRI`, `SAT` — **not** numeric (`0`–`6`)
+- [ ] Worker handlers exported via `export default { fetch, scheduled, queue }` — named exports (`export const queue = ...`) are **not** recognised by Cloudflare for queue consumers or scheduled handlers
+- [ ] `wrangler deploy --dry-run` passes with no errors in all configured environments
+
+### 3. vercel.json Readiness Checklist (Vite SPA)
+
+Before running `vercel deploy`:
+
+- [ ] `"framework"` field matches the build tool in `package.json` — `"vite"` for Vite projects, `"nextjs"` for Next.js; **never copy vercel.json between projects without verifying this field**
+- [ ] Rewrite/redirect rules use the correct static asset path for the framework (`/assets/` for Vite, `/_next/` for Next.js)
+- [ ] Cache headers target the correct asset directory for the framework
+- [ ] SPA fallback rewrite redirects all non-file routes to `/index.html`
 
 ---
 
