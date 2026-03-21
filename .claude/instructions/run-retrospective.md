@@ -220,18 +220,22 @@ tribute-{project-slug}-{YYYYMMDD-HHmm}/
 **Overall process health: X/5** — [one-line summary]
 ```
 
-**Delivery:** The tribute folder is created inside the child project's `artifacts/tributes/` directory:
+**Delivery:** The tribute folder is created inside the child project's `artifacts/tributes/` directory, then copied by the user into The Genesis `tributes/inbox/` for review:
 
 ```
-artifacts/
-└── tributes/
-    └── tribute-{project-slug}-{YYYYMMDD-HHmm}/
-        ├── TRIBUTE.md
-        ├── retrospective-{YYYYMMDD-HHmm}.md
-        ├── bug-report-{YYYYMMDD-HHmm}.md
-        ├── self-review-*.md
-        └── proposed/
-            └── {filename}.md
+[child project] artifacts/tributes/tribute-{project-slug}-{YYYYMMDD-HHmm}/
+    ├── TRIBUTE.md
+    ├── retrospective-{YYYYMMDD-HHmm}.md
+    ├── bug-report-{YYYYMMDD-HHmm}.md
+    ├── self-review-*.md
+    └── proposed/
+        └── {filename}.md
 ```
 
-The user then hands this folder to The Genesis for review in a separate session.
+```
+[The Genesis] tributes/
+    ├── inbox/       ← tribute lands here, awaiting review by The Genesis
+    └── processed/   ← moved here after The Genesis has reviewed and absorbed (or rejected) it
+```
+
+Once The Genesis reviews and acts on a tribute, it moves the folder from `inbox/` to `processed/`.
