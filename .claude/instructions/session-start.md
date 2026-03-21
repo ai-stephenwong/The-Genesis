@@ -71,7 +71,9 @@ Pipeline Status
   8    deploy-production      ⏳ Not started  —               Production URL live + smoke tests passed
                                                               artifacts/devops/deploy-production-*.md
 
-  ✅ Completed  ❌ Failed  🔄 In progress  ⏳ Not started
+  ✅ Completed  🤖 Auto-approved  ❌ Failed  🔄 In progress  ⏳ Not started
+
+  🤖 Auto-approved = stage was completed and approved automatically by Autopilot on the owner's behalf — review the Decision Log
 
 Retrospective History   (from pipeline.md)
 

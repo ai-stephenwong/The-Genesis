@@ -71,9 +71,10 @@ The Pilot runs the entire pipeline without waiting for the master at any point.
 1. Read the agent's output artifact
 2. Apply The Genesis standards as the decision criteria
 3. Decide: approve / reject / resolve ambiguity
-4. Log the decision with rationale (see Decision Log format below)
-5. Take a snapshot (git tag) immediately after the decision
-6. Continue to the next stage
+4. Update the stage status in `agent_docs/project/pipeline.md` to `🤖 Auto-approved` — never `✅ Completed`; this signals to the owner that the approval was made automatically on their behalf, not by a human
+5. Log the decision with rationale (see Decision Log format below)
+6. Take a snapshot (git tag) immediately after the decision
+7. Continue to the next stage
 
 ### Placeholder Convention
 
