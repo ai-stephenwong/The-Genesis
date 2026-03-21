@@ -215,4 +215,18 @@ tribute-{project-slug}-{YYYYMMDD-HHmm}/
 **Overall process health: X/5** — [one-line summary]
 ```
 
-**Delivery:** The tribute folder is placed in `/Users/stephen.wong/Temp/` (or handed to the user to deliver manually) so The Genesis can receive and review it in a separate session.
+**Delivery:** The tribute folder is created inside the child project's `artifacts/tributes/` directory:
+
+```
+artifacts/
+└── tributes/
+    └── tribute-{project-slug}-{YYYYMMDD-HHmm}/
+        ├── TRIBUTE.md
+        ├── retrospective-{YYYYMMDD-HHmm}.md
+        ├── bug-report-{YYYYMMDD-HHmm}.md
+        ├── self-review-*.md
+        └── proposed/
+            └── {filename}.md
+```
+
+The user then hands this folder to The Genesis for review in a separate session.

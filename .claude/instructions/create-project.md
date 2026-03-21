@@ -124,7 +124,8 @@ Show a full summary including the confirmed folder name and ask: **"Create proje
     ├── security/
     ├── devops/
     ├── retrospective/
-    └── compliance/
+    ├── compliance/
+    └── tributes/                      ← tribute packages for The Genesis (one folder per round)
 ```
 
 ---
