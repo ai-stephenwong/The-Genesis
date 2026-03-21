@@ -233,7 +233,7 @@ Show a full summary including the confirmed folder name and ask: **"Create proje
 │   ├── db-migrate.sh                  ← copy from The Genesis scripts/
 │   └── gh-push.sh                     ← copy from The Genesis scripts/
 ├── .secrets/                          ← gitignored — real credential files go here
-│   ├── manifest.yaml.template         ← copy from The Genesis .secrets/ — fill in 1Password paths
+│   ├── manifest.yaml.template         ← copy from The Genesis .secrets/ — fill in Doppler project name
 │   └── load-credentials.sh.template   ← copy from The Genesis .secrets/ — source before Autopilot
 ├── src/                               ← all application source code repositories
 │   └── {repo-name}/                   ← one sub-folder per repo
@@ -276,6 +276,9 @@ Replace ALL of the following placeholders across every copied file:
 Also fill in the Overview paragraph in `CLAUDE.md` using the description from Q3,
 and prefill any known conventions from Q13 into `agent_docs/project/conventions.md`.
 
+In `.secrets/load-credentials.sh.template` and `.secrets/manifest.yaml.template`,
+replace every `{project}` placeholder with the Doppler project name (same as the folder name).
+
 ---
 
 ## Step 7 — After creation
@@ -287,12 +290,26 @@ Display this message to the user:
 
 📁 Folder: {full-path-to-project-folder}
 
-Please open this folder in your IDE (VS Code: File → Open Folder).
-Once opened, Claude Code will guide you through the first-session setup.
+─────────────────────────────────────────
+Credential setup (Doppler) — do this once before running Autopilot:
+
+  1. Create a Doppler project named "{folder-name}" at dashboard.doppler.com
+  2. Add DATABASE_URL to each config (dev / staging / production)
+  3. Run in the project folder:
+       doppler setup --project {folder-name}
+  4. Copy and fill the credential loader:
+       cp .secrets/load-credentials.sh.template .secrets/load-credentials.sh
+     (already has your project name filled in — just verify)
+  5. Test:
+       source .secrets/load-credentials.sh
+       echo $DATABASE_URL
 
 ─────────────────────────────────────────
 Platform deployment file included: {deployment-platform-filename}
 ─────────────────────────────────────────
+
+Please open this folder in your IDE (VS Code: File → Open Folder).
+Once opened, Claude Code will guide you through the first-session setup.
 ```
 
 ---
