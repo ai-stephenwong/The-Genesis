@@ -239,3 +239,95 @@ tribute-{project-slug}-{YYYYMMDD-HHmm}/
 ```
 
 Once The Genesis reviews and acts on a tribute, it moves the folder from `inbox/` to `processed/`.
+
+---
+
+## Tribute Processing (when running inside The Genesis)
+
+> This section governs how The Genesis handles incoming tributes from child projects.
+> It is triggered when the user says "process tribute", "process it", or when a tribute
+> is found in `tributes/inbox/`.
+
+### HARD RULE — NO CHANGES WITHOUT EXPLICIT APPROVAL
+
+> **The Genesis must NEVER apply any change to any file — including `agent_docs/generic/`,**
+> **`.claude/instructions/`, `CLAUDE.md`, or any other file — based on a tribute**
+> **without the user's explicit written approval.**
+>
+> Analysis and recommendation are permitted. Application is not.
+> Silence is not approval. Enthusiasm is not approval.
+> Only an explicit "yes", "approve", "apply", or equivalent direct confirmation counts.
+> This rule has no exceptions.
+
+---
+
+### Step T1 — Read the tribute
+
+Read all files in the tribute folder:
+- `TRIBUTE.md` — cover document and summary of proposals
+- `retrospective-*.md` — full retrospective with root cause analysis
+- `proposed/*.md` — proposed new versions of generic files
+- Self-review files — agent self-assessments
+
+---
+
+### Step T2 — Analyse each proposal independently
+
+For each `PROP-XX` in the tribute:
+- Read the current version of the target file in `agent_docs/generic/`
+- Compare with the proposed version
+- Assess: Is the gap real? Is the proposed change correct and well-scoped? Does it conflict with existing standards? Is it Vercel/Cloudflare-specific (acceptable) or over-fitted to one incident?
+- Reach a verdict: **Accept**, **Reject**, or **Accept with modification**
+
+Do NOT apply anything yet.
+
+---
+
+### Step T3 — Present summary and WAIT
+
+Present a verdict table to the user and STOP. Do not proceed until the user responds.
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Tribute   : {tribute folder name}
+  Source    : {project-slug}
+  Round     : {N}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+Proposal verdicts:
+
+  | Proposal | Target | Verdict | Reason |
+  |---|---|---|---|
+  | PROP-01 | solution-architect | Accept | [one line] |
+  | PROP-02 | devops-engineer    | Accept | [one line] |
+  | PROP-03 | developer          | Reject | [one line] |
+
+Files that would be changed if approved:
+  - agent_docs/generic/agent-roles.md
+  - agent_docs/generic/deployment-vercel-cloudflare.md
+
+Awaiting your approval before any changes are made.
+Reply "apply all", "apply PROP-01 PROP-02", or "reject all".
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**STOP HERE. Do not touch any file until the user responds.**
+
+---
+
+### Step T4 — Apply only what was approved
+
+Apply only the proposals the user explicitly approved:
+- Copy the relevant sections from `proposed/` into `agent_docs/generic/`
+- Update the `<!-- last-reviewed -->` header in each modified file
+- Propagate updated files to all active sibling projects
+
+For rejected proposals: note the rejection reason but make no file changes.
+
+---
+
+### Step T5 — Move tribute and commit
+
+1. Move the tribute folder from `tributes/inbox/` to `tributes/processed/`
+2. Commit all changes (applied files + tribute move) in a single commit
+3. Push to GitHub

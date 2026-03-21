@@ -27,6 +27,7 @@ At the start of every conversation, read and follow `.claude/instructions/sessio
 | "run pipeline" / "run agent {name}" | `.claude/instructions/run-pipeline.md` |
 | "run retrospective" | `.claude/instructions/run-retrospective.md` |
 | "generate compliance report" | `.claude/instructions/generate-compliance.md` |
+| "process tribute" / "process it" / tribute found in `tributes/inbox/` | `.claude/instructions/run-retrospective.md` — **Tribute Processing** section |
 
 ---
 
