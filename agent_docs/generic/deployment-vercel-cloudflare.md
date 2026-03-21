@@ -107,6 +107,49 @@ Before running `vercel deploy`:
 - [ ] Cache headers target the correct asset directory for the framework
 - [ ] SPA fallback rewrite redirects all non-file routes to `/index.html`
 
+### 4. Cross-Service URL Wiring (First Deployment Only)
+
+> On first deployment, the frontend and API have a mutual URL dependency:
+> the frontend must know the API URL, and the API must know the frontend URL (for CORS).
+> This cannot be done in parallel — follow this order strictly.
+
+**Step 1 — Deploy the API (Workers) first:**
+```
+wrangler deploy --env staging    # or production
+```
+Capture the deployed Worker URL from the output (e.g. `https://project-api.workers.dev` or the custom domain once DNS is configured).
+
+**Step 2 — Set the API URL in the frontend environment:**
+
+In Vercel dashboard (or CLI), set the env var for the target environment:
+```
+VITE_API_BASE_URL=https://project-api.workers.dev   # Vite
+NEXT_PUBLIC_API_URL=https://project-api.workers.dev # Next.js
+```
+Mark as **Plain Text** (not Sensitive) — it is a public URL, not a secret.
+
+**Step 3 — Set the frontend URL in the API's CORS config:**
+
+Before deploying the frontend, update `allowed_origins` in the Worker's CORS config to include the Vercel deployment URL. For first deployment this is the `*.vercel.app` preview URL or the custom domain once confirmed:
+```toml
+# wrangler.toml — never use "*" in production
+[vars]
+ALLOWED_ORIGINS = "https://project.vercel.app,https://yourdomain.com"
+```
+Or set as a Worker secret: `wrangler secret put ALLOWED_ORIGINS --env staging`
+
+**Step 4 — Redeploy the API** with the updated CORS config (if changed in step 3).
+
+**Step 5 — Deploy the frontend:**
+```
+vercel deploy --prod   # or via CI after env var is set
+```
+
+**Step 6 — Verify the wiring end-to-end:**
+- [ ] Frontend can reach the API: open the deployed frontend URL, check network tab — no CORS errors, API calls return 200
+- [ ] API returns correct `Access-Control-Allow-Origin` header matching the frontend origin
+- [ ] If custom domains are used, repeat steps 2–5 with the custom domain URLs (replace the `*.vercel.app` / `*.workers.dev` URLs)
+
 ---
 
 ## Architecture Overview
@@ -196,14 +239,22 @@ infrastructure/
 ## CI/CD — GitHub Actions → Vercel + Cloudflare Workers
 
 ```yaml
-# Typical pipeline flow
+# Typical pipeline flow (subsequent deployments — both services already wired)
 1. Test (unit + integration)
 2. SAST (CodeQL or SonarQube)
 3. Dependency scan (Snyk)
 4. Secrets scan (GitLeaks)
 5a. Deploy frontend → Vercel (via vercel CLI or Vercel GitHub integration)
 5b. Deploy Workers → Cloudflare (via wrangler deploy)
+   ↑ 5a and 5b can run in parallel on subsequent deploys (URLs already set)
 6. Smoke tests / health check (both frontend URL and API endpoint)
+
+# First deployment — must follow cross-service URL wiring order (see checklist §4):
+1–4. Same as above
+5.   Deploy Workers first → capture API URL
+6.   Set API URL in Vercel env vars; set frontend URL in Worker CORS config
+7.   Redeploy Workers (CORS update); deploy frontend (with API URL set)
+8.   Smoke tests / health check
 ```
 
 - Use OIDC or scoped API tokens for both Vercel and Cloudflare in CI — no personal tokens `[8.5]`
