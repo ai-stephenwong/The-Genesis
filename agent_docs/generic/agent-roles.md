@@ -562,38 +562,43 @@ ARTIFACTS: .github/workflows/, infrastructure/, artifacts/devops/setup-YYYYMMDD-
 
 ---
 
-### 10. `deploy-staging`
+### 10. `deploy-environment`
 
-**Role:** Trigger the staging deployment via CI/CD, monitor the pipeline run, and verify smoke tests pass. This agent does **not** run `vercel deploy` or `wrangler deploy` directly — it pushes to the deploy branch and lets GitHub Actions handle the actual deployment.
+**Role:** Trigger a deployment to any non-production environment (dev, UAT, pre-production, staging, or any custom environment defined in the project) via CI/CD, monitor the pipeline run, and verify smoke tests pass. This agent does **not** run `vercel deploy` or `wrangler deploy` directly — it pushes to the target branch and lets GitHub Actions handle the actual deployment.
+
+> Invoke as: `run agent deploy-environment env={environment}` (e.g. `env=uat`, `env=staging`, `env=pre-production`)
 
 | Contract | Paths |
 |---|---|
 | **Reads** | `agent_docs/project/pipeline.md`, `agent_docs/project/deployment.md`, `agent_docs/project/git-workflow.md` |
-| **Writes** | `artifacts/devops/deploy-staging-YYYYMMDD-HHmm.md` |
+| **Writes** | `artifacts/devops/deploy-{environment}-YYYYMMDD-HHmm.md` |
 
 **Responsibilities:**
-- Confirm all upstream gates have passed (compliance-officer PASS) before triggering
-- Push the release branch to `origin/develop` (or the configured staging branch) via the GitHub MCP — this triggers the GitHub Actions CI/CD pipeline
+- Confirm all required upstream gates have passed for the target environment before triggering
+- Look up the target branch for `{environment}` in `agent_docs/project/deployment.md` (e.g. `develop` for dev/UAT, `release/*` for staging/pre-prod)
+- Push the correct branch to its remote counterpart via GitHub MCP — this triggers the GitHub Actions CI/CD pipeline
 - Monitor the GitHub Actions run via GitHub MCP until it completes
-- Report the deployment result: pipeline pass/fail, staging URL, smoke test outcome
+- Report the deployment result: pipeline pass/fail, environment URL, smoke test outcome
 - If the CI/CD run fails: surface the failing step and reason; do not retry without understanding the root cause
-- If smoke tests fail: halt and report — do not mark staging as passed
+- If smoke tests fail: halt and report — do not mark the environment as passed
 
 **Must NOT:**
 - Run `vercel deploy`, `wrangler deploy`, or any MCP deployment tool directly — all deployment must go through GitHub Actions
 - Push directly to `main`
-- Mark staging as passed without confirmed smoke test results
+- Mark the environment as passed without confirmed smoke test results
+- Deploy to production — that is `deploy-production` (§11) only
 
 **Output format:**
 ```markdown
-# Staging Deployment — YYYY-MM-DD HH:mm
-## Trigger
-  Branch pushed: develop → origin/develop
+# {Environment} Deployment — YYYY-MM-DD HH:mm
+## Target Environment
+  Environment : {environment}  (dev | uat | pre-production | staging | custom)
+  Branch pushed: {branch} → origin/{branch}
   GitHub Actions run: {run URL}
 ## Pipeline Result
   Status: PASSED | FAILED
   Duration: {duration}
-## Staging URLs
+## Environment URLs
   Frontend : {URL}
   API      : {URL}
   CMS      : {URL} (if applicable)
@@ -608,8 +613,8 @@ ARTIFACTS: .github/workflows/, infrastructure/, artifacts/devops/setup-YYYYMMDD-
 STATUS: COMPLETE | BLOCKED | FAILED
 BLOCKED_REASON: (if BLOCKED)
 FAILED_REASON: (if FAILED)
-GATE: staging-sign-off (always — production deploy requires explicit approval)
-ARTIFACTS: artifacts/devops/deploy-staging-YYYYMMDD-HHmm.md
+GATE: {environment}-sign-off (required before production deploy if this is the final pre-production environment)
+ARTIFACTS: artifacts/devops/deploy-{environment}-YYYYMMDD-HHmm.md
 ```
 
 ---
@@ -620,11 +625,11 @@ ARTIFACTS: artifacts/devops/deploy-staging-YYYYMMDD-HHmm.md
 
 | Contract | Paths |
 |---|---|
-| **Reads** | `artifacts/devops/deploy-staging-*.md` (latest), `agent_docs/project/deployment.md`, `agent_docs/project/git-workflow.md` |
+| **Reads** | `artifacts/devops/deploy-{final-pre-prod-env}-*.md` (latest — the last non-production environment to pass sign-off), `agent_docs/project/deployment.md`, `agent_docs/project/git-workflow.md` |
 | **Writes** | `artifacts/devops/deploy-production-YYYYMMDD-HHmm.md` |
 
 **Responsibilities:**
-- Confirm staging deployment passed and smoke tests are green before proceeding
+- Confirm the final pre-production environment (staging, UAT, pre-prod — whichever is last in the project's pipeline) passed smoke tests before proceeding
 - Push `main` branch to `origin/main` via GitHub MCP — this triggers the GitHub Actions production pipeline
 - Monitor the GitHub Actions run via GitHub MCP until it completes
 - Report the deployment result: pipeline pass/fail, production URL, smoke test outcome

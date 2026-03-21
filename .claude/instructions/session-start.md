@@ -95,8 +95,9 @@ Pipeline Status
   5    security-auditor       ⏳ Not started  —               artifacts/security/audit-*.md
   6    compliance-officer     ⏳ Not started  —               artifacts/compliance/compliance-*.md
        ↑ quality gate — must PASS before any deployment
-  7    deploy-staging         ⏳ Not started  —               Staging URL live + smoke tests passed
-                                                              artifacts/devops/deploy-staging-*.md
+  7    deploy-environment     ⏳ Not started  —               {env} URL live + smoke tests passed
+                                                              artifacts/devops/deploy-{env}-*.md
+       ↑ run per environment: dev, UAT, pre-production, staging, etc.
   8    deploy-production      ⏳ Not started  —               Production URL live + smoke tests passed
                                                               artifacts/devops/deploy-production-*.md
 
