@@ -2,6 +2,15 @@
 
 Execute this in full at the start of every conversation, before doing anything else.
 
+## Step -1 — Detect Context (The Genesis vs Child Project)
+
+Read `CLAUDE.md` and check the project name (first `#` heading).
+
+- If the project is **The Genesis**: skip Steps 0–4 entirely. Instead, display a brief session summary showing recent git commits and any pending work (tributes in `tributes/inbox/`, any uncommitted changes), then stop and wait for the user's instruction.
+- If the project is **any other project (child project)**: continue to Step 0 below.
+
+---
+
 ## Step 0 — Mode Selection
 
 Display the following prompt and wait for the user's choice before doing anything else:
