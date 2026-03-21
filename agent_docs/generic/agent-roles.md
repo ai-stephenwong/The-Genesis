@@ -319,12 +319,12 @@ ARTIFACTS: artifacts/code-review/review-YYYYMMDD-HHmm.md
 
 ### 5. `tester`
 
-**Role:** Independently verify that the implementation meets requirements through testing.
+**Role:** Independently verify that the implementation meets requirements through testing, and maintain the authoritative bug report for the project.
 
 | Contract | Paths |
 |---|---|
 | **Reads** | `src/`, `agent_docs/project/specs/requirements-include-files/*.md`, `artifacts/requirements/analysis-*.md`, `agent_docs/project/commands.md` |
-| **Writes** | `tests/` (test files), `artifacts/test/results-YYYYMMDD-HHmm.md` |
+| **Writes** | `tests/` (test files), `artifacts/test/results-YYYYMMDD-HHmm.md`, `artifacts/development/bug-report-YYYYMMDD-HHmm.md` |
 
 **Responsibilities:**
 - Write and run unit, integration, and E2E tests
@@ -333,14 +333,18 @@ ARTIFACTS: artifacts/code-review/review-YYYYMMDD-HHmm.md
 - Flag gaps in coverage
 - **Authentication flow integration test first:** For any project with authentication, write the full auth integration test before all others — covering: login → session/token storage → authenticated request → token refresh → logout. This is the highest-risk cross-service flow and must be verified end-to-end, not just at the unit level.
 - **Cross-service smoke tests:** Write automated smoke tests that verify: (1) at least one full frontend → API → database round-trip, (2) CORS preflight from the deployed frontend origin returns the correct `Access-Control-Allow-Origin`, (3) session/cookie round-trip works correctly across origins in the target environment.
+- **Bug report — primary responsibility:** The tester owns `artifacts/development/bug-report-YYYYMMDD-HHmm.md`. Create it when the first failure is found; update it immediately each time a new bug or issue is confirmed — do not batch or wait. The bug report is the single source of truth consumed by the retrospective-analyst.
+- **Record project owner issues:** After a dev or staging environment is deployed, the project owner may submit bugs or issues directly. The tester must record these in the active bug report exactly as any test-discovered issue. Owner-submitted issues are first-class bugs.
+- **Bug report freeze rule:** Once a retrospective is triggered against a bug report, that file is **frozen** — no further edits or appends. Any bugs or issues found after that point must go into a **new** `bug-report-YYYYMMDD-HHmm.md` file with a new timestamp.
 
 **Must NOT:**
 - Write application code to fix failures
 - Be the same agent instance as the developer
 - Mark tests as passing without evidence
 - Modify `api-spec.yaml` directly — record any required spec changes as a change request and surface in the test report
+- Create or modify a bug report at or after retrospective trigger — the report must exist and be complete before the retrospective is run
 
-**Output format:**
+**Output format — Test Results:**
 ```markdown
 # Test Results — YYYY-MM-DD HH:mm
 ## Test Summary (pass/fail/skip counts)
@@ -354,6 +358,29 @@ BLOCKED_REASON: (if BLOCKED — list test failures requiring fix before proceedi
 FAILED_REASON: (if FAILED)
 GATE: (omit if COMPLETE)
 ARTIFACTS: tests/, artifacts/test/results-YYYYMMDD-HHmm.md
+```
+
+**Output format — Bug Report** (`artifacts/development/bug-report-YYYYMMDD-HHmm.md`):
+```markdown
+# Bug Report — YYYY-MM-DD HH:mm
+## Project: {project-slug}
+## Status: OPEN | FROZEN
+
+## Bugs / Issues
+
+### BUG-01 — [Title]
+**Reported by:** tester | project owner
+**Found in:** {environment} — YYYY-MM-DD
+**Severity:** Critical | High | Medium | Low
+**Steps to reproduce:** [numbered steps]
+**Expected:** [expected behaviour]
+**Actual:** [actual behaviour]
+**Suspected agent scope:** [which pipeline agent's responsibility may have missed this]
+
+(repeat for each bug)
+
+## Summary
+Total: {N} — Critical: {N}  High: {N}  Medium: {N}  Low: {N}
 ```
 
 ---

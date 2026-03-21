@@ -1,12 +1,19 @@
 # Trigger: Run Retrospective
 
-Execute this when the user says **"run retrospective"** or provides a bug/issue report and asks for a retrospective.
+Execute this when the user says **"run retrospective"**.
+
+> **The bug report must already exist before a retrospective can run.**
+> Bug reports are created and maintained by the `tester` as issues are found — not at retrospective time.
+> If no bug report exists in `artifacts/development/`, halt and ask the tester to produce one first.
 
 ---
 
-## Step 1 — Identify implicated agents
+## Step 1 — Locate and freeze the bug report
 
-Read the bug report and determine which agents' defined responsibilities (from `agent_docs/generic/agent-roles.md`) should have caught each issue.
+1. Find the latest `artifacts/development/bug-report-YYYYMMDD-HHmm.md` that has `Status: OPEN`.
+2. If none exists: halt. Inform the user that a bug report must be created by the tester before the retrospective can run.
+3. **Immediately mark the file `Status: FROZEN`** — write this change before doing anything else. This prevents any further edits to that file. All new bugs found after this point must go into a new `bug-report-YYYYMMDD-HHmm.md`.
+4. Read the frozen bug report and determine which agents' defined responsibilities (from `agent_docs/generic/agent-roles.md`) should have caught each issue.
 
 If the user has not specified which agents are implicated, determine automatically from the root causes. Ask the user to confirm the list before proceeding.
 
@@ -15,7 +22,7 @@ If the user has not specified which agents are implicated, determine automatical
 ## Step 2 — Spawn self-reviews (parallel)
 
 Spawn one agent instance per implicated role, in parallel. Each agent:
-- Reads the bug report
+- Reads the **frozen** bug report
 - Reads its own pipeline artifacts from the affected cycle
 - Writes a self-review to `artifacts/{agent-name}/self-review-YYYYMMDD-HHmm.md`
 
@@ -145,12 +152,17 @@ Would you like to apply these to agent_docs/generic/agent-roles.md? [Y/n/review 
 
 If a second bug batch is found after fixes are applied, repeat with an incremented round number. The retrospective-analyst tracks scores across rounds and notes trend direction.
 
-### Freeze rule — tribute artifacts are immutable
+### Freeze rules — immutability at two points
 
-> Once a bug report or retrospective file has been referenced in a `TRIBUTE.md`, it is **frozen**.
+**Point 1 — Retrospective trigger (Step 1 above):**
+> The bug report is frozen the moment a retrospective is triggered against it.
+> No agent — including the tester — may edit or append to it after that point.
+> New bugs found after this point → new `bug-report-YYYYMMDD-HHmm.md`.
+
+**Point 2 — Tribute produced:**
+> Once a bug report or retrospective file has been referenced in a `TRIBUTE.md`, it is **frozen** a second time (tribute-level freeze).
 > No agent may modify, append to, or overwrite it for any reason.
 >
-> - New bugs found after a tribute is produced → **new bug report file** (`bug-report-YYYYMMDD-HHmm.md`)
 > - Further SDLC proposals → **new retrospective round** (increment round number) → **new tribute**
 > - The frozen files remain as the permanent record of what that round found and proposed.
 >
