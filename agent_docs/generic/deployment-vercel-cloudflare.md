@@ -275,14 +275,22 @@ infrastructure/
 
 ## CI/CD — GitHub Actions → Vercel + Cloudflare Workers
 
-> **Deployment trigger rule:** All staging and production deployments must be triggered
-> by a `git push` to the correct branch. GitHub Actions then runs the deploy commands.
-> **Never run `vercel deploy` or `wrangler deploy` directly from a developer machine
-> for staging or production** — this bypasses all CI checks (tests, SAST, secrets scan)
-> and violates the pipeline integrity rule.
+> **Deployment trigger rule — ALL environments, no exceptions:**
+> Every deployment to every environment (dev, UAT, pre-production, staging, production)
+> **must** be triggered by a `git push` to the correct branch. GitHub Actions then runs
+> the deploy commands inside CI.
 >
-> The only exception is §4 (First Deployment URL wiring), where a one-time manual deploy
-> is needed to capture the initial service URLs. After that, all deploys go through CI/CD.
+> The following are **prohibited in all environments**:
+> - `vercel deploy` run from a developer machine or from Claude Code
+> - `wrangler deploy` run from a developer machine or from Claude Code
+> - Deploying via Cloudflare MCP, Vercel MCP, or any MCP tool directly
+> - Any other method that bypasses the CI/CD pipeline
+>
+> These bypass all CI checks (tests, SAST, secrets scan, smoke tests) and break
+> pipeline integrity regardless of environment.
+>
+> The **only exception** is §4 (First Deployment URL wiring) — a one-time manual deploy
+> to capture initial service URLs before CI/CD is wired. After that, CI/CD is mandatory.
 
 ```yaml
 # Deployment trigger (the only valid way to deploy staging / production):
