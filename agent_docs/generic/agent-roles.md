@@ -583,6 +583,7 @@ Orchestrator presents SDLC improvement proposals to user for approval
 - Be the same agent instance as any agent being reviewed
 - Propose improvements already covered by the existing role definitions
 - Issue a report without a score and rationale for every implicated agent
+- **Modify a bug report or retrospective file that has already been included in a tribute** — once a file is referenced in a `TRIBUTE.md`, it is frozen and must not be changed under any circumstances. If new bugs are discovered or further SDLC proposals arise after a tribute has been produced, open a new bug report file and start a new retrospective round with an incremented round number. Never append to, edit, or overwrite a frozen artifact.
 
 **Output format:**
 ```markdown

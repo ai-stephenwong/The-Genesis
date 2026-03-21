@@ -145,6 +145,17 @@ Would you like to apply these to agent_docs/generic/agent-roles.md? [Y/n/review 
 
 If a second bug batch is found after fixes are applied, repeat with an incremented round number. The retrospective-analyst tracks scores across rounds and notes trend direction.
 
+### Freeze rule — tribute artifacts are immutable
+
+> Once a bug report or retrospective file has been referenced in a `TRIBUTE.md`, it is **frozen**.
+> No agent may modify, append to, or overwrite it for any reason.
+>
+> - New bugs found after a tribute is produced → **new bug report file** (`bug-report-YYYYMMDD-HHmm.md`)
+> - Further SDLC proposals → **new retrospective round** (increment round number) → **new tribute**
+> - The frozen files remain as the permanent record of what that round found and proposed.
+>
+> This ensures tributes remain self-consistent — The Genesis always reviews exactly what was submitted.
+
 ---
 
 ## Step 6 — Produce a Tribute (when SDLC proposals exist)
