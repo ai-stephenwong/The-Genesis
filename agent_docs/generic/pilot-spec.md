@@ -62,8 +62,8 @@ Autopilot is only truly unattended if all of the following are satisfied **befor
 
 | # | Prerequisite | How to satisfy | One-time or per-session? |
 |---|---|---|---|
-| 1 | **Shell credentials for CLI tools** | Run `source .secrets/load-credentials.sh` before starting Claude — only needed for tools not covered by MCP (see note below) | Per session |
-| 2 | **1Password unattended access** | Set `OP_SERVICE_ACCOUNT_TOKEN=ops_...` in `~/.zshrc` — only required if prerequisite 1 is still needed | One-time setup |
+| 1 | **`DATABASE_URL` loaded in shell** | Run `source .secrets/load-credentials.sh` before starting Claude (uses Doppler to export `DATABASE_URL` — the only credential not covered by MCP) | Per session |
+| 2 | **Doppler unattended access** | Set `DOPPLER_TOKEN=dp.st....` in `~/.zshrc` — free-tier service token; no login or Touch ID required | One-time setup |
 | 3 | **Claude Code tool permissions** | All Bash commands, file operations, and external calls used during the pipeline must be pre-approved in `.claude/settings.json`. Any unapproved tool call will pause the session for human confirmation | One-time setup per project |
 | 4 | **MCP server authentication** | All MCP servers (GitHub, Vercel, Cloudflare, Neon, Resend, Upstash) must be authenticated. OAuth tokens are persistent after first login — no action needed after initial setup | One-time setup |
 

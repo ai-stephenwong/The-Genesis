@@ -1,0 +1,36 @@
+# =============================================================================
+# Credential Manifest — Doppler project and secret structure
+# manifest.yaml is gitignored. This template is safe to commit.
+#
+# Prerequisites:
+#   brew install dopplerhq/cli/doppler
+#   doppler login
+#   doppler setup --project {project}   (run once in each child project folder)
+#
+# UNATTENDED AUTOPILOT:
+#   Create a service token at: dashboard.doppler.com → {project} → Access → Service Tokens
+#   Set in ~/.zshrc:  export DOPPLER_TOKEN="dp.st.xxxx"
+#   Free tier supports service tokens — no paid plan required.
+# =============================================================================
+
+doppler_project: "{project}"   # replace with actual project name, e.g. omnichat-v4
+
+# Only DATABASE_URL needs to be loaded into the shell.
+# All other credentials are handled by MCP servers — no shell loading required.
+
+secrets:
+  dev:
+    DATABASE_URL: "Neon dev branch PostgreSQL connection string"
+
+  staging:
+    DATABASE_URL: "Neon staging branch PostgreSQL connection string"
+
+  production:
+    DATABASE_URL: "Neon production branch PostgreSQL connection string"
+
+# MCP-handled credentials (configured once in ~/.claude.json — no Doppler entry needed):
+#   GitHub PAT        → GitHub MCP server
+#   Vercel token      → Vercel MCP server
+#   Cloudflare token  → Cloudflare MCP server
+#   Resend API key    → Resend MCP server
+#   Upstash keys      → Upstash MCP server

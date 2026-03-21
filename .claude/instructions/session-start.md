@@ -34,8 +34,8 @@ If the user chooses **1 — Autopilot**, display this prerequisite check before 
       (only credential still needed — all others handled
        by MCP: GitHub, Vercel, Cloudflare, Resend, Upstash)
       Run: source .secrets/load-credentials.sh
-  [ ] OP_SERVICE_ACCOUNT_TOKEN set in ~/.zshrc if using
-      1Password for DATABASE_URL (no Touch ID)
+  [ ] DOPPLER_TOKEN set in ~/.zshrc for unattended access
+      (free service token — no login or Touch ID needed)
   [ ] All pipeline tool permissions are pre-approved
       in .claude/settings.json (no mid-run prompts)
   [ ] MCP servers are connected (GitHub, Vercel,
