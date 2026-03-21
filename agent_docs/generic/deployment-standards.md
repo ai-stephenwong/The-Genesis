@@ -80,7 +80,8 @@ Every deployment pipeline must include these stages in order:
 | Container scan     | Yes (container deployments) | Trivy `[8.8]` — skip for Vercel/Workers deployments |
 | Build & push image | Yes      | Tag with git SHA + semver                           |
 | Deploy to env      | Yes      | Environment-gated (staging before production)       |
-| Smoke tests        | Yes      | Run post-deploy health checks                       |
+| Per-service smoke tests | Yes | Run immediately after each service deploys — frontend, CMS, API each tested independently; fail pipeline if any check fails |
+| Cross-service smoke tests | Yes | Run after all services in the environment are deployed — full auth flow, CORS, API call round-trip |
 
 - Pipeline configuration files must be version-controlled and reviewed via PR `[8.32]`
 - CI/CD service accounts must follow least-privilege — separate credentials per environment `[8.2]`
@@ -145,6 +146,39 @@ All required environment variables must be **verified as present and non-empty i
 - The `devops-engineer` must confirm each variable is set in the secret manager / platform env config **before** the deployment pipeline runs
 - Cross-service variables (e.g. `FRONTEND_URL` used in API CORS config, `NEXT_PUBLIC_API_URL` used in frontend) must be explicitly called out and double-checked — these are the most common source of first-deployment failures
 
+## Per-Service Post-Deploy Smoke Tests (Required — run immediately after each service deploys)
+
+Every service deployment — frontend, CMS frontend, or API — must pass a fast, minimal smoke test **before** the deployment is considered successful. These run independently per service; they do not wait for other services to be deployed first. The purpose is to catch obvious failures (blank page, 500 on health, broken JS bundle) the moment they happen.
+
+### Frontend (user-facing web app)
+
+| Check | How | Pass condition |
+|---|---|---|
+| Homepage loads | `curl -s -o /dev/null -w "%{http_code}" {FRONTEND_URL}` | `200` |
+| JS bundle served | `curl -s -o /dev/null -w "%{http_code}" {FRONTEND_URL}/assets/index-*.js` | `200` (or equivalent Vite/Next.js asset path) |
+| No JS console error on load | Playwright headless: open homepage, check `page.on('pageerror')` | Zero uncaught errors |
+
+### CMS Frontend
+
+| Check | How | Pass condition |
+|---|---|---|
+| CMS login page loads | `curl -s -o /dev/null -w "%{http_code}" {CMS_URL}/login` (or root) | `200` |
+| JS bundle served | Same as frontend above | `200` |
+
+### API
+
+| Check | How | Pass condition |
+|---|---|---|
+| Health endpoint | `curl -s -o /dev/null -w "%{http_code}" {API_URL}/health` | `200` |
+| Health response body | `curl -s {API_URL}/health` | `{ "status": "ok" }` or equivalent — not an error body |
+| No 500 on root | `curl -s -o /dev/null -w "%{http_code}" {API_URL}/` | Not `500` |
+
+**Rules:**
+- These smoke tests run as the **final step of each service's deploy job** in the CI/CD pipeline — not as a separate job that runs after all services finish
+- A smoke test failure must **fail the pipeline and block the deployment** — not just emit a warning
+- If the API smoke test fails, do not proceed to deploy the frontend services (they will have no working backend)
+- Results must be logged in the deployment artifact
+
 ## Cross-Service Smoke Tests (Required)
 
 Smoke tests must go beyond `/health` endpoint checks. After every deployment to staging or production, the following must pass:
@@ -168,5 +202,6 @@ These tests must be automated in the CI/CD pipeline post-deploy stage. Manual sp
 - [ ] **API base URL verified to include correct path prefix** (e.g. `/api/v1`)
 - [ ] Rollback plan documented and communicated to team
 - [ ] Monitoring and alerting confirmed active
+- [ ] **Per-service smoke tests passed** for each deployed service (homepage 200, JS bundle 200, API /health 200 with ok body)
 - [ ] **Cross-service smoke tests passed** (CORS preflight, auth flow, at least one full API call)
 - [ ] Deployment event logged (version, deployer, timestamp)
