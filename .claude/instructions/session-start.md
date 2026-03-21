@@ -21,6 +21,33 @@ Display the following prompt and wait for the user's choice before doing anythin
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
+If the user chooses **1 — Autopilot**, display this prerequisite check before proceeding:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Autopilot mode selected.
+
+  For a truly unattended run, confirm the following
+  are already in place:
+
+  [ ] source .secrets/load-credentials.sh has been
+      run in this terminal (credentials loaded)
+  [ ] OP_SERVICE_ACCOUNT_TOKEN is set in ~/.zshrc
+      (1Password requires no Touch ID)
+  [ ] All pipeline tool permissions are pre-approved
+      in .claude/settings.json (no mid-run prompts)
+  [ ] MCP servers are connected (GitHub, Vercel,
+      Cloudflare, Neon, Resend, Upstash)
+
+  If any item is not ready, the session will pause
+  mid-run waiting for human input.
+
+  Ready to proceed? [Y / n]:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+Wait for confirmation before continuing.
+
 Store the chosen mode for the rest of this session:
 
 - **1 — Autopilot**: At every pipeline gate, apply The Genesis standards as decision criteria, decide automatically (approve / reject / resolve), create a `snapshot/{stage}-{HHmm}` git tag immediately after deciding, log the decision with rationale. Do not pause for user input at any gate. Every intermediate deliverable that normally requires owner approval (requirements, architecture, API spec, code review, security, compliance, production deploy) is approved automatically on their behalf — each approval is recorded in the Decision Log so the owner can review every gate and roll back any they disagree with on return. For any unknown value (URLs, connection strings, API keys, credentials), use a `PLACEHOLDER_<DESCRIPTION>` token — never block to ask. Track every placeholder used. On completion, deliver the Configuration Handover block (listing all placeholders with file, token, and description) followed by the Decision Log format from `agent_docs/generic/pilot-spec.md`.

@@ -56,6 +56,21 @@ At the start of every run, the Pilot must present the mode selection prompt:
 
 The Pilot runs the entire pipeline without waiting for the master at any point.
 
+### Prerequisites — human actions required before the session starts
+
+Autopilot is only truly unattended if all of the following are satisfied **before** Claude Code is launched. If any prerequisite is missing, Claude Code will pause mid-run waiting for human input, breaking the unattended promise.
+
+| # | Prerequisite | How to satisfy | One-time or per-session? |
+|---|---|---|---|
+| 1 | **Credentials loaded** | Run `source .secrets/load-credentials.sh` in the terminal before starting Claude | Per session (or on shell startup via `~/.zshrc`) |
+| 2 | **1Password unattended access** | Set `OP_SERVICE_ACCOUNT_TOKEN=ops_...` in `~/.zshrc` so `op` does not require Touch ID | One-time setup |
+| 3 | **Claude Code tool permissions** | All Bash commands, file operations, and external calls used during the pipeline must be pre-approved in `.claude/settings.json`. Any unapproved tool call will pause the session for human confirmation | One-time setup per project |
+| 4 | **MCP server authentication** | All MCP servers (GitHub, Vercel, Cloudflare, Neon, Resend, Upstash) must be authenticated. OAuth tokens are persistent after first login — no action needed after initial setup | One-time setup |
+
+> If prerequisites 1–2 are not met, deployment scripts will fail with credential errors.
+> If prerequisite 3 is not met, Claude Code will pause at the first unapproved tool call.
+> The session is not unattended until all four prerequisites are satisfied.
+
 > Every intermediate deliverable that would normally require the master's approval
 > (requirements sign-off, architecture sign-off, API spec sign-off, security verdict,
 > compliance gate, production deploy) is **approved automatically on the master's behalf**
