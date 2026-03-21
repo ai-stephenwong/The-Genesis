@@ -265,6 +265,80 @@ infrastructure/
 - R2: no egress fees — prefer R2 over S3 for assets served via Cloudflare
 - Set up Cloudflare billing alerts and Vercel spend notifications
 
+## Autopilot Credential Security
+`ISO 27001: 8.24, 5.17, 8.2`
+
+> This section governs how credentials are stored and used when Claude Code runs in Autopilot mode.
+> The goal is that the AI never reads a credential value — it only references variable names.
+
+### Threat Model
+
+| Threat | Mitigation |
+|---|---|
+| Credential committed to git | `.secrets/` is gitignored; only `*.template` files are committed |
+| Credential in Claude's context window | Credentials are pre-loaded as shell env vars; Claude references `$VAR_NAME` only |
+| Credential in tool call output / logs | Wrapper scripts call CLIs that read env vars internally — no token flags in commands |
+| Prompt injection → env var exfiltration | `check-credential-inspection.py` PreToolUse hook blocks inspection commands |
+| Leaked token blast radius | All tokens scoped to minimum permissions (see table below) |
+| Stale token exposure window | Short-lived tokens where supported (see table below) |
+
+### Required Token Scopes (Layer 3 — Minimal Scope)
+
+| Service | Where to create | Required scopes | Notes |
+|---|---|---|---|
+| GitHub | github.com/settings/tokens → Fine-grained PAT | `contents: read+write`, `workflows: read+write` on specific repo only | Set expiry: 30 days. Never use classic PAT with repo-wide access |
+| Vercel | vercel.com/account/tokens | Project-scoped token | Rotate every 90 days |
+| Cloudflare | dash.cloudflare.com/profile/api-tokens | `Workers Scripts: Edit`, `D1: Edit` for specific account. **Never use Global API Key** | Set TTL if available |
+| Neon | console.neon.tech | Connection string for one database only — not admin credentials | Use separate strings per environment |
+| Resend | resend.com/api-keys | `Sending access` on verified domain only — not full account | |
+| Upstash | console.upstash.com | Specific database REST token — not account token | |
+
+### Token Expiry (Layer 4 — Short-Lived Tokens)
+
+| Service | Supports TTL | Recommended setting |
+|---|---|---|
+| GitHub fine-grained PAT | Yes | 30 days — rotate after each project deploy |
+| Cloudflare API token | Yes | Set TTL in token settings |
+| Vercel token | No | Rotate manually every 90 days |
+| Neon connection string | No | Rotate immediately if any exposure suspected |
+| Resend API key | No | Rotate every 90 days |
+| Upstash REST token | No | Rotate every 90 days |
+
+### Setup Workflow (one-time per project)
+
+1. Install 1Password CLI: `brew install 1password-cli`
+2. Sign in: `op signin`
+3. Copy `.secrets/manifest.yaml.template` → `.secrets/manifest.yaml`
+4. Fill in `op://VaultName/ItemName/field` paths for each service
+5. Copy `.secrets/load-credentials.sh.template` → `.secrets/load-credentials.sh`
+6. Update `op://` paths in `load-credentials.sh` to match manifest
+7. Before each Claude Code Autopilot session: `source .secrets/load-credentials.sh`
+8. Start Claude Code: `claude`
+
+Credentials are loaded into shell memory only. Nothing is written to disk. Claude Code inherits the shell environment and all wrapper scripts consume credentials by env var reference.
+
+### Wrapper Scripts (Layer 2)
+
+Claude calls these scripts instead of CLI tools directly. The AI never references a token value.
+
+| Script | Wraps | Env vars required |
+|---|---|---|
+| `scripts/deploy-vercel.sh` | `vercel deploy` | `VERCEL_TOKEN`, `VERCEL_ORG_ID` |
+| `scripts/deploy-wrangler.sh` | `wrangler deploy` | `CLOUDFLARE_API_TOKEN`, `CLOUDFLARE_ACCOUNT_ID` |
+| `scripts/db-migrate.sh` | `npx prisma migrate` | `DATABASE_URL` |
+| `scripts/gh-push.sh` | `git push` | `GH_TOKEN` |
+
+### Layer 5 — Separate Execution Context
+> **Recommended but not implemented.**
+>
+> In this design, Claude generates a `deploy-manifest.sh` artifact but does not execute it.
+> A separate trusted process (not the AI) reads the manifest and performs the actual deployment with credentials.
+> This is the only architecture where the AI provably never interacts with credentials at all.
+> Adoption is deferred because it requires a human review step or a trusted execution runner,
+> which breaks fully unattended Autopilot operation. Implement when highest-security deployment is required.
+
+---
+
 ## Compliance Evidence for ISO 27001 Audits
 `ISO 27001: 5.28, 8.15`
 

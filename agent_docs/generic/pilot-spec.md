@@ -65,6 +65,23 @@ The Pilot runs the entire pipeline without waiting for the master at any point.
 5. Take a snapshot (git tag) immediately after the decision
 6. Continue to the next stage
 
+### Placeholder Convention
+
+In Autopilot mode, the Pilot must **never block or pause** to ask for unknown configuration values. Instead:
+
+- Use `PLACEHOLDER_<DESCRIPTION>` tokens wherever a value requires project owner input:
+  - Environment URLs (e.g. `PLACEHOLDER_STAGING_URL`)
+  - Database / cache connection strings (e.g. `PLACEHOLDER_DB_CONNECTION_STRING`)
+  - API keys and secrets (e.g. `PLACEHOLDER_STRIPE_SECRET_KEY`)
+  - Third-party credentials and account IDs (e.g. `PLACEHOLDER_CF_ACCOUNT_ID`)
+  - Any other value that cannot be derived from the codebase or standards
+
+- Track every placeholder used: file path, placeholder token, and a plain-English description of what value is needed.
+
+- After all pipeline stages complete, deliver a **Configuration Handover** block immediately before the Decision Log (see format below).
+
+The application will not run until all placeholders are replaced with real values. The Configuration Handover block is the project owner's checklist to do so.
+
 ### Snapshot convention
 
 Every gate produces a git tag in the child project repository:
@@ -118,6 +135,23 @@ git checkout -b restart/from-architecture-1025
 
   Review the decisions above. If any does not make sense, identify the
   gate number and roll back to its snapshot to restart from that point.
+
+  ─────────────────────────────────────────────
+  CONFIGURATION HANDOVER
+  The following placeholders must be replaced before the application runs:
+
+  #   File                            Placeholder                      Description
+  ─── ──────────────────────────────  ───────────────────────────────  ──────────────────────────────────
+  1   .env.production                 PLACEHOLDER_DB_CONNECTION_STRING PostgreSQL connection string
+  2   .env.production                 PLACEHOLDER_JWT_SECRET           JWT signing secret (min 32 chars)
+  3   wrangler.toml                   PLACEHOLDER_CF_ACCOUNT_ID        Cloudflare account ID
+  4   wrangler.toml                   PLACEHOLDER_CF_DATABASE_ID       Cloudflare D1 database ID
+  5   vercel.json / env               PLACEHOLDER_VERCEL_PROJECT_ID    Vercel project ID
+  (list every PLACEHOLDER_* token used across all files)
+
+  Once all values are filled in, re-run the deploy steps:
+    deploy-staging    : "run agent deploy-staging"
+    deploy-production : "run agent deploy-production"
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 

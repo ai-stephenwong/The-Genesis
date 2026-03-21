@@ -193,9 +193,13 @@ Show a full summary including the confirmed folder name and ask: **"Create proje
 {project-slug}/
 ├── CLAUDE.md                          ← use template at bottom of this file
 ├── .claude/
-│   └── settings.json                  ← copy from .claude/settings.json
+│   ├── settings.json                  ← copy from .claude/settings.json
+│   ├── hooks/
+│   │   └── check-credential-inspection.py  ← copy from .claude/hooks/
+│   └── instructions/
+│       └── session-start.md           ← copy from .claude/instructions/session-start.md
 ├── agent_docs/
-│   ├── generic/                       ← copy ALL generic files
+│   ├── generic/                       ← copy ALL generic files (including deployment-vercel-cloudflare.md)
 │   │   ├── api-conventions.md
 │   │   ├── nfr-baseline.md
 │   │   ├── security-checklist.md
@@ -223,6 +227,14 @@ Show a full summary including the confirmed folder name and ask: **"Create proje
 │           ⚠️  api-spec.yaml is NOT pre-created — produced by solution-architect.
 │           ⚠️  er-diagram.md is NOT pre-created — produced by solution-architect.
 │               Pre-creating these files would falsely pass the architecture gate check.
+├── scripts/                           ← deployment wrapper scripts (Claude calls these, never raw CLI)
+│   ├── deploy-vercel.sh               ← copy from The Genesis scripts/
+│   ├── deploy-wrangler.sh             ← copy from The Genesis scripts/
+│   ├── db-migrate.sh                  ← copy from The Genesis scripts/
+│   └── gh-push.sh                     ← copy from The Genesis scripts/
+├── .secrets/                          ← gitignored — real credential files go here
+│   ├── manifest.yaml.template         ← copy from The Genesis .secrets/ — fill in 1Password paths
+│   └── load-credentials.sh.template   ← copy from The Genesis .secrets/ — source before Autopilot
 ├── src/                               ← all application source code repositories
 │   └── {repo-name}/                   ← one sub-folder per repo
 └── artifacts/                         ← agent pipeline outputs (timestamped)
@@ -324,6 +336,10 @@ Use this block when writing `CLAUDE.md` into a new project:
 ```markdown
 # Project: [Project Name]
 
+## Always-On (every session)
+
+At the start of every conversation, read and follow `.claude/instructions/session-start.md` before doing anything else.
+
 ## Overview
 
 [One paragraph: what this system does and who it's for]
@@ -359,6 +375,7 @@ Use this block when writing `CLAUDE.md` into a new project:
 - `agent_docs/generic/git-workflow.md` — branching, commit, and PR conventions
 - `agent_docs/generic/agent-roles.md` — agent pipeline roles, I/O contracts, separation-of-duty rules
 - `agent_docs/generic/uiux-standards.md` — UI/UX design principles, accessibility, responsive design, sensitive data display rules
+- `agent_docs/generic/pilot-spec.md` — Pilot orchestrator contract (Autopilot / Co-pilot / Manual modes)
 
 ### Project-Specific Docs (fill in per project)
 - `agent_docs/project/stack.md` — exact versions and dependencies

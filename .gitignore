@@ -11,3 +11,11 @@
 *.pem
 *.key
 credentials.*
+
+# Credentials — never commit real values
+.secrets/
+!.secrets/*.template
+
+# Local-only / generated files
+.claude/settings.local.json
+tribute-*.zip

@@ -2,6 +2,34 @@
 
 Execute this in full at the start of every conversation, before doing anything else.
 
+## Step 0 — Mode Selection
+
+Display the following prompt and wait for the user's choice before doing anything else:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Choose operating mode for this session:
+
+  1) Autopilot  — Claude runs everything unattended.
+                  You receive a decision log + git snapshots
+                  at every gate when done.
+
+  2) Manual     — You approve every gate yourself.
+                  (Standard behaviour)
+
+  Choose [1 / 2]:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+Store the chosen mode for the rest of this session:
+
+- **1 — Autopilot**: At every pipeline gate, apply The Genesis standards as decision criteria, decide automatically (approve / reject / resolve), create a `snapshot/{stage}-{HHmm}` git tag immediately after deciding, log the decision. Do not pause for user input at any gate. For any unknown value (URLs, connection strings, API keys, credentials), use a `PLACEHOLDER_<DESCRIPTION>` token — never block to ask. Track every placeholder used. On completion, deliver the Configuration Handover block (listing all placeholders with file, token, and description) followed by the Decision Log format from `agent_docs/generic/pilot-spec.md`.
+- **2 — Manual**: Standard behaviour — pause and wait for user approval at every gate.
+
+Then continue to Step 1.
+
+---
+
 ## Step 1 — Display Session Summary
 
 1. Read `CLAUDE.md` → extract project name, client, phase, and description

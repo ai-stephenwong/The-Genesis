@@ -4,32 +4,51 @@
       "WebSearch",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:docs.anthropic.com)",
-      "Bash(chmod +x \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/scripts/init-project.sh\")",
-      "Bash(bash -n \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/scripts/init-project.sh\")",
-      "Bash(chmod +x \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/scripts/generate-compliance-report.sh\")",
-      "Bash(DEST=\"/Users/stephen.wong/Projects-AI-Agents/aa-web-revamp\")",
-      "Bash(mkdir -p \"$DEST/.claude\")",
-      "Bash(mkdir -p \"$DEST/agent_docs/generic\")",
-      "Bash(mkdir -p \"$DEST/agent_docs/project/specs\")",
-      "Bash(mkdir -p \"$DEST/reports\")",
-      "Bash(sed -e 's/\\\\[Project Name\\\\]/AA Web Revamp/g' \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/agent_docs/templates/requirements/01-functional.md\")",
-      "Bash(\"/Users/stephen.wong/Projects-AI-Agents/aa-web-revamp/agent_docs/project/requirements/01-functional.md\")",
       "Bash(gh auth:*)",
       "Bash(brew install:*)",
       "Bash(sw_vers)",
-      "Bash(curl -sL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)",
-      "Bash(bash)",
-      "Bash(/opt/homebrew/bin/brew --version)",
-      "Bash(/usr/local/bin/brew --version)",
-      "Bash(sed -e 's/\\\\[Project Name\\\\]/Recruit.com.hk revamp/g' \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/agent_docs/templates/specs/requirements.md\")",
-      "Bash(\"/Users/stephen.wong/Projects-AI-Agents/Recruit-com-hk-revamp-2026/agent_docs/project/specs/requirements.md\")",
-      "Bash(chmod +x \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/scripts/propagate-updates.sh\")",
-      "Bash(bash scripts/propagate-updates.sh --all)"
+      "Bash(bash scripts/propagate-updates.sh:*)",
+      "Bash(cp:*)",
+      "Bash(mv \"/Users/stephen.wong/Projects-AI-Agents:*)",
+      "Bash(mv /Users/stephen.wong/Projects-AI-Agents:*)",
+      "Bash(mkdir:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(rm \"/Users/stephen.wong/Projects-AI-Agents:*)",
+      "Bash(rm -rf \"/Users/stephen.wong/Projects-AI-Agents:*)",
+      "Bash(rm -f \"/Users/stephen.wong/Projects-AI-Agents:*)",
+      "Bash(rm /Users/stephen.wong/Projects-AI-Agents:*)",
+      "Bash(for p:*)",
+      "Bash(mkdir -p \"/Users/stephen.wong/Projects-AI-Agents/$p/scripts\")",
+      "Bash(done)",
+      "Bash(cp \"/Users/stephen.wong/Projects-AI-Agents/omnichat-v4/scripts/deploy-vercel.sh\" \"/Users/stephen.wong/Projects-AI-Agents/$p/scripts/\")",
+      "Bash(cp \"/Users/stephen.wong/Projects-AI-Agents/omnichat-v4/scripts/deploy-wrangler.sh\" \"/Users/stephen.wong/Projects-AI-Agents/$p/scripts/\")",
+      "Bash(cp \"/Users/stephen.wong/Projects-AI-Agents/omnichat-v4/scripts/db-migrate.sh\" \"/Users/stephen.wong/Projects-AI-Agents/$p/scripts/\")",
+      "Bash(cp \"/Users/stephen.wong/Projects-AI-Agents/omnichat-v4/scripts/gh-push.sh\" \"/Users/stephen.wong/Projects-AI-Agents/$p/scripts/\")",
+      "Bash(chmod +x /Users/stephen.wong/Projects-AI-Agents/omnichat-v4/scripts/*.sh)",
+      "Bash(cp \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/.secrets/manifest.yaml.template\" \"/Users/stephen.wong/Projects-AI-Agents/$p/.secrets/\")",
+      "Bash(cp \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/.secrets/load-credentials.sh.template\" \"/Users/stephen.wong/Projects-AI-Agents/$p/.secrets/\")"
     ],
     "deny": [],
     "additionalDirectories": [
-      "/Users/stephen.wong/Projects-AI-Agents/-The Genesis",
-      "/Users/stephen.wong/Projects-AI-Agents/-The Genesis/.claude"
+      "/Users/stephen.wong/Projects-AI-Agents",
+      "/Users/stephen.wong/Projects-AI-Agents/omnichat-v4/.claude",
+      "/Users/stephen.wong/Projects-AI-Agents/recruit-v3/.claude",
+      "/Users/stephen.wong/Projects-AI-Agents/-The Genesis/.claude",
+      "/Users/stephen.wong/Projects-AI-Agents/$p/.secrets"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 .claude/hooks/check-credential-inspection.py"
+          }
+        ]
+      }
     ]
   }
 }
