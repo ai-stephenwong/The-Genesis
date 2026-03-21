@@ -30,10 +30,11 @@ If the user chooses **1 — Autopilot**, display this prerequisite check before 
   For a truly unattended run, confirm the following
   are already in place:
 
-  [ ] source .secrets/load-credentials.sh has been
-      run in this terminal (credentials loaded)
-  [ ] OP_SERVICE_ACCOUNT_TOKEN is set in ~/.zshrc
-      (1Password requires no Touch ID)
+  [ ] source .secrets/load-credentials.sh has been run
+      (only CLOUDFLARE_API_TOKEN + DATABASE_URL needed;
+       GitHub/Vercel/Resend/Upstash are handled by MCP)
+  [ ] OP_SERVICE_ACCOUNT_TOKEN set in ~/.zshrc if using
+      1Password for the above credentials (no Touch ID)
   [ ] All pipeline tool permissions are pre-approved
       in .claude/settings.json (no mid-run prompts)
   [ ] MCP servers are connected (GitHub, Vercel,

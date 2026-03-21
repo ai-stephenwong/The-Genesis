@@ -62,14 +62,25 @@ Autopilot is only truly unattended if all of the following are satisfied **befor
 
 | # | Prerequisite | How to satisfy | One-time or per-session? |
 |---|---|---|---|
-| 1 | **Credentials loaded** | Run `source .secrets/load-credentials.sh` in the terminal before starting Claude | Per session (or on shell startup via `~/.zshrc`) |
-| 2 | **1Password unattended access** | Set `OP_SERVICE_ACCOUNT_TOKEN=ops_...` in `~/.zshrc` so `op` does not require Touch ID | One-time setup |
+| 1 | **Shell credentials for CLI tools** | Run `source .secrets/load-credentials.sh` before starting Claude — only needed for tools not covered by MCP (see note below) | Per session |
+| 2 | **1Password unattended access** | Set `OP_SERVICE_ACCOUNT_TOKEN=ops_...` in `~/.zshrc` — only required if prerequisite 1 is still needed | One-time setup |
 | 3 | **Claude Code tool permissions** | All Bash commands, file operations, and external calls used during the pipeline must be pre-approved in `.claude/settings.json`. Any unapproved tool call will pause the session for human confirmation | One-time setup per project |
 | 4 | **MCP server authentication** | All MCP servers (GitHub, Vercel, Cloudflare, Neon, Resend, Upstash) must be authenticated. OAuth tokens are persistent after first login — no action needed after initial setup | One-time setup |
 
-> If prerequisites 1–2 are not met, deployment scripts will fail with credential errors.
+**What MCP servers replace vs what still needs shell credentials:**
+
+| Credential | Needed in shell? | Why |
+|---|---|---|
+| `GH_TOKEN` | ❌ No | GitHub MCP handles all Git/GitHub operations |
+| `VERCEL_TOKEN` | ❌ No | Vercel MCP handles deployments and project management |
+| `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` | ✅ Yes | `wrangler deploy` CLI still requires these as env vars |
+| `DATABASE_URL` (dev / staging / production) | ✅ Yes | `prisma migrate` CLI reads `DATABASE_URL` from the environment |
+| `RESEND_API_KEY` | ❌ No | Resend MCP handles email sending |
+| `UPSTASH_REDIS_URL` / `UPSTASH_REDIS_TOKEN` | ❌ No | Upstash MCP handles Redis operations |
+
+> If prerequisite 1 is not met, `wrangler deploy` and `prisma migrate` will fail with credential errors.
 > If prerequisite 3 is not met, Claude Code will pause at the first unapproved tool call.
-> The session is not unattended until all four prerequisites are satisfied.
+> The session is not unattended until all prerequisites are satisfied.
 
 > Every intermediate deliverable that would normally require the master's approval
 > (requirements sign-off, architecture sign-off, API spec sign-off, security verdict,
