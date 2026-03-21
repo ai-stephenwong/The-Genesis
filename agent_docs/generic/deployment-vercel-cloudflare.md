@@ -113,11 +113,12 @@ Before running `vercel deploy`:
 > the frontend must know the API URL, and the API must know the frontend URL (for CORS).
 > This cannot be done in parallel — follow this order strictly.
 
-**Step 1 — Deploy the API (Workers) first:**
+**Step 1 — Deploy the API (Workers) first** *(one-time manual deploy — URL wiring only)*:
 ```
 wrangler deploy --env staging    # or production
 ```
 Capture the deployed Worker URL from the output (e.g. `https://project-api.workers.dev` or the custom domain once DNS is configured).
+> After this step, all future deploys go through `git push` → GitHub Actions. This manual deploy is only to get the initial URL.
 
 **Step 2 — Set the API URL in the frontend environment:**
 
@@ -140,10 +141,11 @@ Or set as a Worker secret: `wrangler secret put ALLOWED_ORIGINS --env staging`
 
 **Step 4 — Redeploy the API** with the updated CORS config (if changed in step 3).
 
-**Step 5 — Deploy the frontend:**
+**Step 5 — Deploy the frontend** *(one-time manual deploy — URL wiring only)*:
 ```
-vercel deploy --prod   # or via CI after env var is set
+vercel deploy --prod
 ```
+> After this step, switch to CI/CD. All future frontend deploys must go through `git push origin main` → GitHub Actions.
 
 **Step 6 — Verify the wiring end-to-end:**
 - [ ] Frontend can reach the API: open the deployed frontend URL, check network tab — no CORS errors, API calls return 200
@@ -273,25 +275,33 @@ infrastructure/
 
 ## CI/CD — GitHub Actions → Vercel + Cloudflare Workers
 
+> **Deployment trigger rule:** All staging and production deployments must be triggered
+> by a `git push` to the correct branch. GitHub Actions then runs the deploy commands.
+> **Never run `vercel deploy` or `wrangler deploy` directly from a developer machine
+> for staging or production** — this bypasses all CI checks (tests, SAST, secrets scan)
+> and violates the pipeline integrity rule.
+>
+> The only exception is §4 (First Deployment URL wiring), where a one-time manual deploy
+> is needed to capture the initial service URLs. After that, all deploys go through CI/CD.
+
 ```yaml
-# Typical pipeline flow (subsequent deployments — both services already wired)
+# Deployment trigger (the only valid way to deploy staging / production):
+git push origin develop    # → triggers staging deploy via GitHub Actions
+git push origin main       # → triggers production deploy via GitHub Actions
+
+# GitHub Actions pipeline (runs automatically on push — do NOT run these manually):
 1. Test (unit + integration)
 2. SAST (CodeQL or SonarQube)
 3. Dependency scan (Snyk)
 4. Secrets scan (GitLeaks)
-5a. Deploy Workers → Cloudflare (via wrangler deploy)
+5a. Deploy Workers → Cloudflare (wrangler deploy — runs inside CI, not locally)
 5b. API smoke test  ← run immediately after Workers deploy, before frontend
-5c. Deploy frontend → Vercel (via vercel CLI or Vercel GitHub integration)
+5c. Deploy frontend → Vercel (vercel deploy — runs inside CI, not locally)
 5d. Frontend smoke test ← run immediately after frontend deploy
    Note: 5a→5b must complete before 5c starts (frontend smoke test needs API up)
 
-# First deployment — must follow cross-service URL wiring order (see checklist §4):
-1–4. Same as above
-5.   Deploy Workers first → capture API URL
-6.   API smoke test (health + one authenticated endpoint)
-7.   Set API URL in Vercel env vars; set frontend URL in Worker CORS config
-8.   Redeploy Workers (CORS update); deploy frontend (with API URL set)
-9.   Frontend smoke test (load page + verify API data fetch succeeds)
+# First deployment only — one-time manual deploy to capture service URLs (see §4):
+# After URL wiring is complete, all subsequent deploys go through the CI pipeline above.
 ```
 
 **Per-service smoke test requirements** — see §5 below.
