@@ -19,3 +19,6 @@ credentials.*
 # Local-only / generated files
 .claude/settings.local.json
 tribute-*.zip
+
+# macOS archive metadata
+__MACOSX/

@@ -287,10 +287,25 @@ Read all files in the tribute folder:
 For each `PROP-XX` in the tribute:
 - Read the current version of the target file in `agent_docs/generic/`
 - Compare with the proposed version
-- Assess: Is the gap real? Is the proposed change correct and well-scoped? Does it conflict with existing standards? Is it Vercel/Cloudflare-specific (acceptable) or over-fitted to one incident?
+- Assess: Is the gap real? Is the proposed change correct and well-scoped? Is it Vercel/Cloudflare-specific (acceptable) or over-fitted to one incident?
 - Reach a verdict: **Accept**, **Reject**, or **Accept with modification**
 
 Do NOT apply anything yet.
+
+---
+
+### Step T2b — Conflict check (mandatory before T3)
+
+For every proposal with verdict **Accept** or **Accept with modification**, perform an explicit conflict check:
+
+1. **Text conflict** — does the proposed addition duplicate, contradict, or overlap any existing sentence, bullet, or checklist item in the target file? Identify the exact lines.
+2. **Semantic conflict** — does the proposed responsibility duplicate the intent of an existing responsibility under a different name? If so, note which two items overlap and how.
+3. **Scope conflict** — does the proposal modify a role in a way that blurs the separation-of-duty boundaries defined in the Pipeline Overview (e.g. a developer responsibility that encroaches on the code-reviewer's defined scope)?
+4. **Standards conflict** — does the proposed change contradict any other file in `agent_docs/generic/` (NFR baseline, security checklist, API conventions, deployment standards)?
+
+For each conflict found: downgrade the verdict to **Accept with modification** and state the required adjustment. If no conflicts are found, explicitly state "No conflicts found" for that proposal.
+
+Include the conflict-check results in the verdict table presented at Step T3.
 
 ---
 

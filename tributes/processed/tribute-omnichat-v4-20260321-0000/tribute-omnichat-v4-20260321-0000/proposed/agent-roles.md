@@ -1,4 +1,4 @@
-<!-- last-reviewed: 2026-03-21 | reviewed-by: The Genesis (tribute omnichat-v4 R1) | next-review: 2026-09-21 -->
+<!-- last-reviewed: 2026-03-21 | reviewed-by: retrospective-analyst (omnichat-v1 deployment round) | next-review: 2026-09-21 -->
 
 # Agent Roles & Pipeline Contracts (Company Standard)
 
