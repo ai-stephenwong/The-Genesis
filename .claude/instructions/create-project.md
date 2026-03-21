@@ -4,6 +4,115 @@ Execute this workflow when the user says **"create new project"** or similar int
 
 ---
 
+## Step 0 — Choose input mode
+
+Ask the user:
+
+```
+How would you like to provide the project details?
+
+  A) Quick mode — I'll give you a template to fill in and paste back (faster)
+  B) Q&A mode  — you ask me one question at a time
+```
+
+- **If A:** follow **Quick Mode** below, then jump to Step 2.
+- **If B:** follow **Q&A Mode** (Step 1) as normal.
+
+---
+
+## Quick Mode
+
+### QM-1 — Show the template
+
+Display this message exactly:
+
+```
+Copy the table below, fill in every field, and paste it back.
+Replace the placeholder text — do not leave any field blank.
+For fields with options listed, pick one of the listed values exactly.
+
+| Field        | Value                                                              |
+|--------------|--------------------------------------------------------------------|
+| Client       |                                                                    |
+| Project name |                                                                    |
+| Description  | (one sentence: what it does and who it's for)                      |
+| Cloud        | AWS / GCP / Alibaba Cloud / On-Premise / Vercel+Cloudflare         |
+| Environments | dev / staging / production (or customise)                          |
+| Backend      | Node.js+TypeScript+Express / Node.js+TypeScript+Fastify / Java+SpringBoot / Python+FastAPI |
+| Database     | PostgreSQL / MySQL / MongoDB / Other: ___                          |
+| Frontend     | React 18 / None                                                    |
+| Styling      | Tailwind / MUI / Ant Design / Other: ___ / N/A                     |
+| Auth         | JWT / Auth0 / Keycloak / Other: ___                                |
+| Phase        | Discovery / Development / QA / Staging / Production                |
+| Repo URL     | (GitHub/GitLab URL or "not yet created")                           |
+| Conventions  | (any project-specific rules, or "none")                            |
+```
+
+Wait for the user to paste the filled table.
+
+### QM-2 — Validate the input
+
+Before doing anything else, validate every field against these rules:
+
+| Field | Rule |
+|---|---|
+| Client | Not empty |
+| Project name | Not empty |
+| Description | Not empty; must be at least one meaningful sentence |
+| Cloud | Must be one of: `AWS`, `GCP`, `Alibaba Cloud`, `On-Premise`, `Vercel+Cloudflare` |
+| Environments | Not empty; must contain at least one environment name |
+| Backend | Must be one of the listed options or a clearly specified "Other" |
+| Database | Must be one of the listed options or a clearly specified "Other" |
+| Frontend | Must be `React 18` or `None` |
+| Styling | Required if Frontend is `React 18`; must not be blank or `N/A` in that case |
+| Auth | Must be one of the listed options or a clearly specified "Other" |
+| Phase | Must be one of: `Discovery`, `Development`, `QA`, `Staging`, `Production` |
+| Repo URL | Must be a valid URL (starting with `https://`) or exactly `not yet created` |
+| Conventions | Not empty; `none` is acceptable |
+
+**If any field fails validation**, list all errors clearly and ask the user to correct and re-paste the full table. Do NOT proceed with partial data. Do NOT ask for corrections one by one — show all errors at once so the user can fix in one pass.
+
+**If all fields pass**, proceed to QM-3.
+
+### QM-3 — Show confirmation summary
+
+Display a full confirmation summary and ask for explicit approval before creating anything:
+
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Project summary — please confirm before creation
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Client       : {value}
+  Project name : {value}
+  Description  : {value}
+  Cloud        : {value}
+  Environments : {value}
+  Backend      : {value}
+  Database     : {value}
+  Frontend     : {value}
+  Styling      : {value}
+  Auth         : {value}
+  Phase        : {value}
+  Repo URL     : {value}
+  Conventions  : {value}
+
+  Folder name  : {suggested kebab-case slug}
+  Full path    : /Users/stephen.wong/Projects-AI-Agents/{slug}
+
+  Create project with these settings? [Y/n]
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+```
+
+**STOP. Do not create any files until the user replies Y or explicit confirmation.**
+If the user replies N or requests changes, return to QM-1 with a fresh template pre-filled with their previous values.
+
+Once confirmed, jump to **Step 4** (skip Step 1–3 of Q&A mode).
+
+---
+
+## Q&A Mode
+
 ## Step 1 — Ask questions ONE AT A TIME
 
 **CRITICAL: Ask ONE question, wait for the answer, then ask the next. Never ask multiple questions in a single message.**
