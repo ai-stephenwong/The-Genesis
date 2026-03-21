@@ -69,6 +69,12 @@ Downstream stages can start as soon as their input artifacts exist.
 ## Ambiguities & Open Questions
 ## Conflicts with Company Standards
 ## Recommended Clarifications
+## PILOT STATUS
+STATUS: COMPLETE | BLOCKED | FAILED
+BLOCKED_REASON: (if BLOCKED — list open questions requiring master input)
+FAILED_REASON: (if FAILED)
+GATE: requirements-sign-off (if BLOCKED or ambiguities flagged)
+ARTIFACTS: artifacts/requirements/analysis-YYYYMMDD-HHmm.md
 ```
 
 ---
@@ -145,6 +151,12 @@ If any incompatibility is found: propose an alternative, document in `architectu
   - API spec:             [frontend lead + backend lead, date]
   - Platform compat:      [name, date]
 ## Open Items
+## PILOT STATUS
+STATUS: COMPLETE | BLOCKED | FAILED
+BLOCKED_REASON: (if BLOCKED — list unresolved conflicts or missing sign-offs)
+FAILED_REASON: (if FAILED)
+GATE: architecture-sign-off (always — all 5 deliverables require approval before dev starts)
+ARTIFACTS: agent_docs/project/architecture.md, agent_docs/project/er-diagram.md, agent_docs/project/specs/functional-specs.md, agent_docs/project/specs/api-spec.yaml, artifacts/architecture/design-YYYYMMDD-HHmm.md
 ```
 
 ---
@@ -211,6 +223,12 @@ If any incompatibility is found: propose an alternative, document in `architectu
 ## Test Coverage
 ## Known Limitations
 ## Review Notes for Code Reviewer
+## PILOT STATUS
+STATUS: COMPLETE | BLOCKED | FAILED
+BLOCKED_REASON: (if BLOCKED — list pending change requests or unresolved spec deviations)
+FAILED_REASON: (if FAILED)
+GATE: (omit if COMPLETE; standards-conflict if BLOCKED on a conflict)
+ARTIFACTS: src/, artifacts/development/feature-YYYYMMDD-HHmm.md
 ```
 
 **API spec change request format** (write to `artifacts/development/api-spec-change-requests-YYYYMMDD.md`):
@@ -268,6 +286,12 @@ If any incompatibility is found: propose an alternative, document in `architectu
 ## Test Coverage Assessment
 ## Standards Compliance
 ## Recommendation: Approve / Request Changes / Reject
+## PILOT STATUS
+STATUS: COMPLETE | BLOCKED | FAILED
+BLOCKED_REASON: (if BLOCKED — list Critical findings requiring fix before proceeding)
+FAILED_REASON: (if FAILED)
+GATE: code-review-findings (if Critical findings present)
+ARTIFACTS: artifacts/code-review/review-YYYYMMDD-HHmm.md
 ```
 
 ---
@@ -303,6 +327,12 @@ If any incompatibility is found: propose an alternative, document in `architectu
 ## Failed Tests
 ## Requirements Coverage Matrix
 ## Gaps & Recommendations
+## PILOT STATUS
+STATUS: COMPLETE | BLOCKED | FAILED
+BLOCKED_REASON: (if BLOCKED — list test failures requiring fix before proceeding)
+FAILED_REASON: (if FAILED)
+GATE: (omit if COMPLETE)
+ARTIFACTS: tests/, artifacts/test/results-YYYYMMDD-HHmm.md
 ```
 
 ---
@@ -341,6 +371,12 @@ If any incompatibility is found: propose an alternative, document in `architectu
 ## OWASP Top 10 Coverage
 ## ISO 27001 Control Mapping
 ## Recommendation: Pass / Conditional Pass / Fail
+## PILOT STATUS
+STATUS: COMPLETE | BLOCKED | FAILED
+BLOCKED_REASON: (if BLOCKED — list Critical security findings requiring fix)
+FAILED_REASON: (if FAILED)
+GATE: security-audit (if Critical findings present)
+ARTIFACTS: artifacts/security/audit-YYYYMMDD-HHmm.md
 ```
 
 ---
@@ -405,6 +441,12 @@ If any incompatibility is found: propose an alternative, document in `architectu
   | Fix | Deployed to | Verified by | Result |
 ## Overall Status: PASS / CONDITIONAL PASS / FAIL
 ## Sign-off
+## PILOT STATUS
+STATUS: COMPLETE | BLOCKED | FAILED
+BLOCKED_REASON: (if BLOCKED — list non-compliant items blocking sign-off)
+FAILED_REASON: (if FAILED)
+GATE: compliance-sign-off (always — compliance officer sign-off required before production deploy)
+ARTIFACTS: artifacts/compliance/compliance-YYYYMMDD-HHmm.md
 ```
 
 ---
@@ -446,6 +488,12 @@ If any incompatibility is found: propose an alternative, document in `architectu
   ### Major (should fix)
   ### Minor (nice to fix)
 ## Recommendation: Approve / Request Changes / Reject
+## PILOT STATUS
+STATUS: COMPLETE | BLOCKED | FAILED
+BLOCKED_REASON: (if BLOCKED — list Critical UX findings requiring fix)
+FAILED_REASON: (if FAILED)
+GATE: (omit if COMPLETE)
+ARTIFACTS: artifacts/ux-review/review-YYYYMMDD-HHmm.md
 ```
 
 ---
@@ -498,6 +546,12 @@ If any incompatibility is found: propose an alternative, document in `architectu
 ## Files Created / Modified
 ## Rollback Procedure
 ## Known Limitations / Open Items
+## PILOT STATUS
+STATUS: COMPLETE | BLOCKED | FAILED
+BLOCKED_REASON: (if BLOCKED — list IaC issues or unprovisioned resources)
+FAILED_REASON: (if FAILED)
+GATE: (omit if COMPLETE)
+ARTIFACTS: .github/workflows/, infrastructure/, artifacts/devops/setup-YYYYMMDD-HHmm.md
 ```
 
 ---
@@ -627,6 +681,12 @@ Orchestrator presents SDLC improvement proposals to user for approval
   Rationale: ...
 
 ## Sign-off: retrospective-analyst — YYYY-MM-DD HH:mm
+## PILOT STATUS
+STATUS: COMPLETE | BLOCKED | FAILED
+BLOCKED_REASON: (if BLOCKED)
+FAILED_REASON: (if FAILED)
+GATE: (omit — retrospective-analyst does not block the pipeline)
+ARTIFACTS: artifacts/retrospective/retrospective-YYYYMMDD-HHmm.md
 ```
 
 ---
