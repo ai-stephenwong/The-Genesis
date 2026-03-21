@@ -643,6 +643,7 @@ Orchestrator presents SDLC improvement proposals to user for approval
    - `compliance-officer` starts only after ALL other agents complete
 6. **A stage must not start** if its required input artifact is missing or flagged as incomplete
 7. **`retrospective-analyst` is a meta-pipeline agent** — it never runs as part of the standard build pipeline; it is only triggered by "run retrospective" with a bug/issue report as input
+8. **Never modify The Genesis directly** — child project agents must NEVER write to, edit, or delete any file inside The Genesis project folder (`-The Genesis/`). The Genesis is the governing framework; child projects are subject to it, not equal to it. The only permitted mechanism for proposing changes to The Genesis is a **tribute** (see `run-retrospective.md` Step 6). This rule applies at the operations level: no agent running inside a child project may issue any file-write command targeting The Genesis directory, regardless of how good the intention is. Only agents running inside The Genesis project itself may modify its files.
 
 ---
 

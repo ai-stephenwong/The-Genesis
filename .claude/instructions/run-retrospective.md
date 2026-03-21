@@ -149,7 +149,12 @@ If a second bug batch is found after fixes are applied, repeat with an increment
 
 ## Step 6 — Produce a Tribute (when SDLC proposals exist)
 
-A **tribute** is the formal output package that the retrospective-analyst produces when it has SDLC improvement proposals ready to be absorbed by The Genesis. It is the mechanism by which a child project feeds lessons learned back upstream.
+A **tribute** is the formal output package that the retrospective-analyst produces when it has SDLC improvement proposals ready to be absorbed by The Genesis. It is the mechanism by which a child project humbly submits lessons learned back upstream for The Genesis to judge.
+
+> **The Genesis is the governing framework — child projects are subject to it, not equal to it.**
+> A tribute is a petition, not an order. The retrospective-analyst proposes; The Genesis decides.
+> Child project agents must **NEVER** directly modify any file inside The Genesis project folder.
+> The tribute is the only permitted channel for suggesting change.
 
 **When to create:** At the end of any retrospective round that produces at least one `PROP-XX` entry.
 
