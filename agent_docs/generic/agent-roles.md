@@ -562,7 +562,111 @@ ARTIFACTS: .github/workflows/, infrastructure/, artifacts/devops/setup-YYYYMMDD-
 
 ---
 
-### 10. `retrospective-analyst`
+### 10. `deploy-staging`
+
+**Role:** Trigger the staging deployment via CI/CD, monitor the pipeline run, and verify smoke tests pass. This agent does **not** run `vercel deploy` or `wrangler deploy` directly — it pushes to the deploy branch and lets GitHub Actions handle the actual deployment.
+
+| Contract | Paths |
+|---|---|
+| **Reads** | `agent_docs/project/pipeline.md`, `agent_docs/project/deployment.md`, `agent_docs/project/git-workflow.md` |
+| **Writes** | `artifacts/devops/deploy-staging-YYYYMMDD-HHmm.md` |
+
+**Responsibilities:**
+- Confirm all upstream gates have passed (compliance-officer PASS) before triggering
+- Push the release branch to `origin/develop` (or the configured staging branch) via the GitHub MCP — this triggers the GitHub Actions CI/CD pipeline
+- Monitor the GitHub Actions run via GitHub MCP until it completes
+- Report the deployment result: pipeline pass/fail, staging URL, smoke test outcome
+- If the CI/CD run fails: surface the failing step and reason; do not retry without understanding the root cause
+- If smoke tests fail: halt and report — do not mark staging as passed
+
+**Must NOT:**
+- Run `vercel deploy`, `wrangler deploy`, or any MCP deployment tool directly — all deployment must go through GitHub Actions
+- Push directly to `main`
+- Mark staging as passed without confirmed smoke test results
+
+**Output format:**
+```markdown
+# Staging Deployment — YYYY-MM-DD HH:mm
+## Trigger
+  Branch pushed: develop → origin/develop
+  GitHub Actions run: {run URL}
+## Pipeline Result
+  Status: PASSED | FAILED
+  Duration: {duration}
+## Staging URLs
+  Frontend : {URL}
+  API      : {URL}
+  CMS      : {URL} (if applicable)
+## Smoke Test Results
+  API health check       : PASS | FAIL
+  API CORS preflight     : PASS | FAIL
+  Frontend load          : PASS | FAIL
+  Frontend → API data    : PASS | FAIL
+## Issues Found
+  (list any failures with details)
+## PILOT STATUS
+STATUS: COMPLETE | BLOCKED | FAILED
+BLOCKED_REASON: (if BLOCKED)
+FAILED_REASON: (if FAILED)
+GATE: staging-sign-off (always — production deploy requires explicit approval)
+ARTIFACTS: artifacts/devops/deploy-staging-YYYYMMDD-HHmm.md
+```
+
+---
+
+### 11. `deploy-production`
+
+**Role:** Trigger the production deployment via CI/CD after staging sign-off, monitor the pipeline run, and verify smoke tests pass. Requires explicit owner approval before proceeding — this gate is never auto-skipped, even in Autopilot mode unless all preceding gates passed cleanly.
+
+| Contract | Paths |
+|---|---|
+| **Reads** | `artifacts/devops/deploy-staging-*.md` (latest), `agent_docs/project/deployment.md`, `agent_docs/project/git-workflow.md` |
+| **Writes** | `artifacts/devops/deploy-production-YYYYMMDD-HHmm.md` |
+
+**Responsibilities:**
+- Confirm staging deployment passed and smoke tests are green before proceeding
+- Push `main` branch to `origin/main` via GitHub MCP — this triggers the GitHub Actions production pipeline
+- Monitor the GitHub Actions run via GitHub MCP until it completes
+- Report the deployment result: pipeline pass/fail, production URL, smoke test outcome
+- If the CI/CD run fails: surface the failing step; do not retry without understanding root cause
+- If smoke tests fail: halt and escalate — never mark production as live without confirmed smoke test pass
+
+**Must NOT:**
+- Run `vercel deploy`, `wrangler deploy`, or any MCP deployment tool directly
+- Deploy without confirmed staging pass
+- Skip the production approval gate
+
+**Output format:**
+```markdown
+# Production Deployment — YYYY-MM-DD HH:mm
+## Trigger
+  Branch pushed: main → origin/main
+  GitHub Actions run: {run URL}
+## Pipeline Result
+  Status: PASSED | FAILED
+  Duration: {duration}
+## Production URLs
+  Frontend : {URL}
+  API      : {URL}
+  CMS      : {URL} (if applicable)
+## Smoke Test Results
+  API health check       : PASS | FAIL
+  API CORS preflight     : PASS | FAIL
+  Frontend load          : PASS | FAIL
+  Frontend → API data    : PASS | FAIL
+## Issues Found
+  (list any failures with details)
+## PILOT STATUS
+STATUS: COMPLETE | BLOCKED | FAILED
+BLOCKED_REASON: (if BLOCKED)
+FAILED_REASON: (if FAILED)
+GATE: (omit if COMPLETE)
+ARTIFACTS: artifacts/devops/deploy-production-YYYYMMDD-HHmm.md
+```
+
+---
+
+### 12. `retrospective-analyst`
 
 **Role:** Evaluate agent performance after a bug batch or deficiency set is discovered, score each implicated agent against their defined responsibilities, and produce actionable SDLC improvement proposals. This is a **meta-pipeline role** — it does not run as part of the standard build pipeline but is triggered separately whenever a batch of bugs or issues is found (typically after staging deployment, integration testing, or production incidents).
 
