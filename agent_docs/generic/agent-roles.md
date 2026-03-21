@@ -38,6 +38,23 @@ Downstream stages can start as soon as their input artifacts exist.
 
 ---
 
+## Universal Retrospective Obligation
+
+> **Every agent defined in this file is subject to the self-review requirement when implicated in a retrospective.**
+
+When the orchestrator triggers a retrospective (`run retrospective`), it identifies which agents' defined responsibilities should have caught each bug or deficiency. Every implicated agent **must** produce a self-review report before the `retrospective-analyst` is spawned.
+
+**Self-review is mandatory — not optional.** An agent that fails to produce a self-review, produces an incomplete one, or deflects responsibility inaccurately will have its self-review quality scored separately by the `retrospective-analyst` and a lower score recorded for that round.
+
+| Input | `artifacts/{agent}/self-review-YYYYMMDD-HHmm.md` |
+|---|---|
+| **Reads** | The bug report + the agent's own pipeline artifacts from the affected cycle |
+| **Writes** | `artifacts/{agent-name}/self-review-YYYYMMDD-HHmm.md` |
+
+Self-review format and scoring rubric are defined under §12 `retrospective-analyst`.
+
+---
+
 ## Agent Definitions
 
 ### 1. `requirements-analyst`
