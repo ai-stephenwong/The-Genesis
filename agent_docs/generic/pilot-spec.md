@@ -73,12 +73,12 @@ Autopilot is only truly unattended if all of the following are satisfied **befor
 |---|---|---|
 | `GH_TOKEN` | ❌ No | GitHub MCP handles all Git/GitHub operations |
 | `VERCEL_TOKEN` | ❌ No | Vercel MCP handles deployments and project management |
-| `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` | ✅ Yes | `wrangler deploy` CLI still requires these as env vars |
-| `DATABASE_URL` (dev / staging / production) | ✅ Yes | `prisma migrate` CLI reads `DATABASE_URL` from the environment |
+| `CLOUDFLARE_API_TOKEN` / `CLOUDFLARE_ACCOUNT_ID` | ❌ No | Cloudflare MCP handles Workers deployment and resource management |
+| `DATABASE_URL` (dev / staging / production) | ✅ Yes | `prisma migrate` CLI reads `DATABASE_URL` from the environment — no MCP covers local CLI migrations |
 | `RESEND_API_KEY` | ❌ No | Resend MCP handles email sending |
 | `UPSTASH_REDIS_URL` / `UPSTASH_REDIS_TOKEN` | ❌ No | Upstash MCP handles Redis operations |
 
-> If prerequisite 1 is not met, `wrangler deploy` and `prisma migrate` will fail with credential errors.
+> **Only `DATABASE_URL` requires shell credential loading** — all other service credentials are handled by MCP servers.
 > If prerequisite 3 is not met, Claude Code will pause at the first unapproved tool call.
 > The session is not unattended until all prerequisites are satisfied.
 
