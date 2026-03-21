@@ -513,6 +513,7 @@ ARTIFACTS: artifacts/ux-review/review-YYYYMMDD-HHmm.md
 
 **Responsibilities:**
 - Write CI/CD pipeline configuration covering all required stages (test, SAST, dep scan, secrets scan, container scan, build, deploy, smoke test)
+- **Per-service smoke tests (mandatory, run immediately after each deploy — not as a single final step):** (1) After the API (Workers) deploys: run health check, CORS preflight against the frontend origin, auth rejection test, and one DB-read endpoint — a failure here must halt the pipeline and block the frontend deploy; (2) After the frontend deploys: load the root URL and load a page that fetches live data from the API — the page must render with real API data to confirm the API URL env var is correctly wired and the connection works end-to-end. See `deployment-vercel-cloudflare.md §5` for the full per-service smoke test checklist.
 - Write IaC (Terraform / CDK / Bicep / wrangler.toml) for the selected cloud platform
 - Write Dockerfiles following container security best practices (non-root, minimal base image, pinned versions)
 - Configure secrets management integration (secret manager ARNs, Vault paths, Workers secrets)

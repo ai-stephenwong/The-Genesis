@@ -152,6 +152,41 @@ vercel deploy --prod   # or via CI after env var is set
 
 ---
 
+## §5 — Post-Deploy Smoke Tests (Per Service)
+
+> Run these immediately after each service deploys — not as a single final step.
+> A smoke test failure after the API deploy must block the frontend deploy.
+> All tests must be automated in CI; manual verification is not sufficient.
+
+### API (Cloudflare Workers) — run after every Workers deploy
+
+| # | Test | Pass condition |
+|---|---|---|
+| 1 | `GET /health` | HTTP 200, body contains `{ "status": "ok" }` (or project equivalent) |
+| 2 | `GET /` or any public endpoint | HTTP 200 or 401 — confirms the Worker is reachable and routing correctly |
+| 3 | CORS preflight: `OPTIONS /v1/{any-endpoint}` with `Origin: {frontend-url}` | HTTP 200, `Access-Control-Allow-Origin` matches the frontend domain exactly — not `*` |
+| 4 | Auth rejection: call a protected endpoint without a token | HTTP 401 — confirms auth middleware is active |
+| 5 | Database reachability: call one endpoint that reads from the DB | HTTP 200 with valid data — confirms DB binding/connection string is correct |
+
+If any of tests 1–5 fails: **halt the pipeline**. Do not deploy the frontend.
+
+### Frontend (Vercel) — run after frontend deploys
+
+| # | Test | Pass condition |
+|---|---|---|
+| 1 | `GET {frontend-url}/` | HTTP 200, HTML response — confirms the deployment is live |
+| 2 | Load a page that fetches data from the API | Page renders with real data from the API (not empty/error state) — confirms `VITE_API_BASE_URL` / `NEXT_PUBLIC_API_URL` is correctly set and the API connection works end-to-end |
+| 3 | No CORS errors in the page | Browser console (or Playwright headless) shows no `Cross-Origin` / `CORS` errors during the data fetch |
+| 4 | `GET {frontend-url}/health` or equivalent static check | HTTP 200 — confirms SPA routing fallback is working (all paths resolve to `index.html`) |
+
+> **Test 2 is mandatory.** It is the only test that proves the frontend-to-API wiring is correct in the deployed environment. A frontend that loads but shows empty or error state due to a wrong API URL is a deployment failure.
+
+### CMS (if present) — same pattern as Frontend
+
+Apply the same two-stage approach: load the CMS root URL (confirms deployment), then load a CMS page that fetches content from the API (confirms API connectivity from the CMS domain).
+
+---
+
 ## Architecture Overview
 
 ```
@@ -244,18 +279,22 @@ infrastructure/
 2. SAST (CodeQL or SonarQube)
 3. Dependency scan (Snyk)
 4. Secrets scan (GitLeaks)
-5a. Deploy frontend → Vercel (via vercel CLI or Vercel GitHub integration)
-5b. Deploy Workers → Cloudflare (via wrangler deploy)
-   ↑ 5a and 5b can run in parallel on subsequent deploys (URLs already set)
-6. Smoke tests / health check (both frontend URL and API endpoint)
+5a. Deploy Workers → Cloudflare (via wrangler deploy)
+5b. API smoke test  ← run immediately after Workers deploy, before frontend
+5c. Deploy frontend → Vercel (via vercel CLI or Vercel GitHub integration)
+5d. Frontend smoke test ← run immediately after frontend deploy
+   Note: 5a→5b must complete before 5c starts (frontend smoke test needs API up)
 
 # First deployment — must follow cross-service URL wiring order (see checklist §4):
 1–4. Same as above
 5.   Deploy Workers first → capture API URL
-6.   Set API URL in Vercel env vars; set frontend URL in Worker CORS config
-7.   Redeploy Workers (CORS update); deploy frontend (with API URL set)
-8.   Smoke tests / health check
+6.   API smoke test (health + one authenticated endpoint)
+7.   Set API URL in Vercel env vars; set frontend URL in Worker CORS config
+8.   Redeploy Workers (CORS update); deploy frontend (with API URL set)
+9.   Frontend smoke test (load page + verify API data fetch succeeds)
 ```
+
+**Per-service smoke test requirements** — see §5 below.
 
 - Use OIDC or scoped API tokens for both Vercel and Cloudflare in CI — no personal tokens `[8.5]`
 - Preview deployments on every PR (Vercel) — protect with Cloudflare Access `[8.2]`
