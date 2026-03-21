@@ -35,6 +35,7 @@ For fields with options listed, pick one of the listed values exactly.
 |--------------|--------------------------------------------------------------------|
 | Client       |                                                                    |
 | Project name |                                                                    |
+| Folder name  | (kebab-case, e.g. my-project — this becomes the folder name)       |
 | Description  | (one sentence: what it does and who it's for)                      |
 | Cloud        | AWS / GCP / Alibaba Cloud / On-Premise / Vercel+Cloudflare         |
 | Environments | dev / staging / production (or customise)                          |
@@ -58,6 +59,7 @@ Before doing anything else, validate every field against these rules:
 |---|---|
 | Client | Not empty |
 | Project name | Not empty |
+| Folder name | Not empty; must be kebab-case (lowercase, hyphens only, no spaces or special characters) |
 | Description | Not empty; must be at least one meaningful sentence |
 | Cloud | Must be one of: `AWS`, `GCP`, `Alibaba Cloud`, `On-Premise`, `Vercel+Cloudflare` |
 | Environments | Not empty; must contain at least one environment name |
@@ -97,8 +99,8 @@ Display a full confirmation summary and ask for explicit approval before creatin
   Repo URL     : {value}
   Conventions  : {value}
 
-  Folder name  : {suggested kebab-case slug}
-  Full path    : /Users/stephen.wong/Projects-AI-Agents/{slug}
+  Folder name  : {folder name from table}
+  Full path    : /Users/stephen.wong/Projects-AI-Agents/{folder name}
 
   Create project with these settings? [Y/n]
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
