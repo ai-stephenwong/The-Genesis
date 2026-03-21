@@ -144,3 +144,75 @@ Would you like to apply these to agent_docs/generic/agent-roles.md? [Y/n/review 
 ## Step 5 — Multiple rounds
 
 If a second bug batch is found after fixes are applied, repeat with an incremented round number. The retrospective-analyst tracks scores across rounds and notes trend direction.
+
+---
+
+## Step 6 — Produce a Tribute (when SDLC proposals exist)
+
+A **tribute** is the formal output package that the retrospective-analyst produces when it has SDLC improvement proposals ready to be absorbed by The Genesis. It is the mechanism by which a child project feeds lessons learned back upstream.
+
+**When to create:** At the end of any retrospective round that produces at least one `PROP-XX` entry.
+
+**The retrospective-analyst creates a tribute folder:**
+
+```
+tribute-{project-slug}-{YYYYMMDD-HHmm}/
+├── TRIBUTE.md                          ← cover document (required)
+├── retrospective-{YYYYMMDD-HHmm}.md    ← full retrospective artifact
+├── bug-report-{YYYYMMDD-HHmm}.md       ← the triggering bug report
+├── self-review-{YYYYMMDD-HHmm}.md      ← one per implicated agent
+│   (or self-review-{agent}-{YYYYMMDD-HHmm}.md if multiple agents)
+└── proposed/                           ← proposed new versions of generic files
+    └── {filename}.md                   ← one file per generic file that needs updating
+```
+
+**`TRIBUTE.md` format:**
+
+```markdown
+# Tribute — {project-slug} → The Genesis
+**Date:** YYYY-MM-DD
+**Source project:** {project-slug}
+**Retrospective round:** N
+**Retrospective artifact:** retrospective-YYYYMMDD-HHmm.md
+
+---
+
+## What happened
+[One paragraph: what bug batch or failure triggered this retrospective and why it matters]
+
+---
+
+## Proposed changes to The Genesis
+
+### File 1: `agent_docs/generic/{filename}`
+
+| Proposal | Target agent | Change |
+|---|---|---|
+| PROP-01 | `{agent}` | [one-line description of change] |
+
+(repeat for each file)
+
+---
+
+## Included artifacts
+
+| File | Description |
+|---|---|
+| `TRIBUTE.md` | This cover document |
+| `retrospective-YYYYMMDD-HHmm.md` | Full retrospective |
+| `bug-report-YYYYMMDD-HHmm.md` | Triggering bug report |
+| `self-review-YYYYMMDD-HHmm.md` | [agent] self-review |
+| `proposed/{filename}` | Proposed new version of `agent_docs/generic/{filename}` |
+
+---
+
+## Agent scores this round
+
+| Agent | Score | Key finding |
+|---|---|---|
+| {agent} | X/5 | [one line] |
+
+**Overall process health: X/5** — [one-line summary]
+```
+
+**Delivery:** The tribute folder is placed in `/Users/stephen.wong/Temp/` (or handed to the user to deliver manually) so The Genesis can receive and review it in a separate session.
