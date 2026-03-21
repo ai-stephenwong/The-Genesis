@@ -56,12 +56,22 @@ At the start of every run, the Pilot must present the mode selection prompt:
 
 The Pilot runs the entire pipeline without waiting for the master at any point.
 
+> Every intermediate deliverable that would normally require the master's approval
+> (requirements sign-off, architecture sign-off, API spec sign-off, security verdict,
+> compliance gate, production deploy) is **approved automatically on the master's behalf**
+> using The Genesis standards as the decision criteria.
+>
+> Every such approval is recorded in the Decision Log, which is delivered in full when
+> the Pilot finishes. The master must review the Decision Log before accepting the output
+> — if any approval does not reflect their intent, they can roll back to that gate's
+> snapshot and restart from that point.
+
 ### Pilot behaviour at every gate
 
 1. Read the agent's output artifact
 2. Apply The Genesis standards as the decision criteria
 3. Decide: approve / reject / resolve ambiguity
-4. Log the decision (see Decision Log format below)
+4. Log the decision with rationale (see Decision Log format below)
 5. Take a snapshot (git tag) immediately after the decision
 6. Continue to the next stage
 
@@ -133,8 +143,18 @@ git checkout -b restart/from-architecture-1025
   CMS         : https://...
   Test account: {email} / {password}
 
-  Review the decisions above. If any does not make sense, identify the
-  gate number and roll back to its snapshot to restart from that point.
+  ⚠️  The approvals above were made automatically on your behalf.
+  Every intermediate deliverable — requirements, architecture, API spec,
+  code review, security, compliance, and production deploy — was decided
+  by the Pilot using The Genesis standards. No human reviewed them during
+  the run.
+
+  Please review each gate before accepting the output as final.
+  If any approval does not reflect your intent:
+    1. Identify the gate number
+    2. Check out its snapshot:  git checkout snapshot/{tag}
+    3. Branch and restart:      git checkout -b restart/from-{gate}
+    4. Re-run from that stage:  "run agent {stage-name}"
 
   ─────────────────────────────────────────────
   CONFIGURATION HANDOVER
