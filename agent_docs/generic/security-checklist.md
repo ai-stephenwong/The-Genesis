@@ -1,4 +1,4 @@
-<!-- last-reviewed: 2026-03-16 | reviewed-by: Stephen Wong | next-review: 2026-09-16 -->
+<!-- last-reviewed: 2026-03-22 | reviewed-by: The Genesis (tribute omnichat-v4 R2) | next-review: 2026-09-22 -->
 
 # Security Checklist (Company Standard)
 
@@ -55,6 +55,7 @@
 - [ ] [BLOCKER] CORS verified with a **real browser OPTIONS preflight request** from the deployed frontend origin in staging — config inspection alone is not sufficient
 - [ ] [BLOCKER] `Access-Control-Allow-Origin` response header confirmed present and correct in staging before production deploy
 - [ ] CORS origin env var (e.g. `FRONTEND_URL`) confirmed set in the target environment's secret manager / platform config — not just in `.env.example`
+- [ ] [BLOCKER] CSP directive domain values verified against the documented API base URL, media CDN origin, and font provider domains for the target deployment environment — a production API domain appearing in CSP `connect-src` in a staging config (or vice versa) is an A05 (Security Misconfiguration) failure `[8.9, 8.26]`
 - [ ] Security headers set: `X-Frame-Options`, `X-Content-Type-Options`, `Referrer-Policy`, `CSP` `[8.26]`
 - [ ] Cookies: `Secure`, `HttpOnly`, `SameSite=Strict` or `Lax` `[8.26]`
 
