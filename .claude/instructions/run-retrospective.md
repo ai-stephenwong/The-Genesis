@@ -384,8 +384,17 @@ For rejected proposals: note the rejection reason but make no file changes.
 
 ---
 
-### Step T5 — Move tribute and commit
+### Step T5 — Move, archive, and commit
 
 1. Move the tribute folder from `tributes/inbox/` to `tributes/processed/`
-2. Commit all changes (applied files + tribute move) in a single commit
-3. Push to GitHub
+2. **Zip and compress** the moved folder to save space:
+   ```bash
+   cd tributes/processed/
+   zip -r {tribute-folder-name}.zip {tribute-folder-name}/
+   rm -rf {tribute-folder-name}/
+   ```
+3. Commit all changes (applied files + tribute zip) in a single commit
+4. Push to GitHub
+
+> Processed tributes are stored as zips in `tributes/processed/` — the zip is the permanent record.
+> The inbox zip (`tributes/inbox/tribute-*.zip`) is gitignored; only processed zips are tracked.

@@ -27,7 +27,14 @@
       "Bash(cp \"/Users/stephen.wong/Projects-AI-Agents/omnichat-v4/scripts/gh-push.sh\" \"/Users/stephen.wong/Projects-AI-Agents/$p/scripts/\")",
       "Bash(chmod +x /Users/stephen.wong/Projects-AI-Agents/omnichat-v4/scripts/*.sh)",
       "Bash(cp \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/.secrets/manifest.yaml.template\" \"/Users/stephen.wong/Projects-AI-Agents/$p/.secrets/\")",
-      "Bash(cp \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/.secrets/load-credentials.sh.template\" \"/Users/stephen.wong/Projects-AI-Agents/$p/.secrets/\")"
+      "Bash(cp \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/.secrets/load-credentials.sh.template\" \"/Users/stephen.wong/Projects-AI-Agents/$p/.secrets/\")",
+      "Bash(mv tributes/inbox/tribute-omnichat-v4-20260321-0000 tributes/processed/)",
+      "Bash(mv tributes/inbox/tribute-omnichat-v4-20260321-0000.zip tributes/processed/)",
+      "Bash(cp -r tributes/inbox/tribute-omnichat-v4-20260321-0000 tributes/processed/)",
+      "Bash(cp tributes/inbox/tribute-omnichat-v4-20260321-0000.zip tributes/processed/)",
+      "Bash(rm -rf tributes/inbox/tribute-omnichat-v4-20260321-0000 tributes/inbox/tribute-omnichat-v4-20260321-0000.zip)",
+      "Bash(zip -r tribute-omnichat-v4-20260321-0000.zip tribute-omnichat-v4-20260321-0000/)",
+      "Bash(rm -rf tribute-omnichat-v4-20260321-0000/)"
     ],
     "deny": [],
     "additionalDirectories": [
@@ -45,7 +52,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 .claude/hooks/check-credential-inspection.py"
+            "command": "python3 \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/.claude/hooks/check-credential-inspection.py\""
           }
         ]
       }

@@ -18,7 +18,8 @@ credentials.*
 
 # Local-only / generated files
 .claude/settings.local.json
-tribute-*.zip
+tributes/inbox/tribute-*.zip
+# processed/ zips are tracked — they are the archived tribute record
 
 # macOS archive metadata
 __MACOSX/
