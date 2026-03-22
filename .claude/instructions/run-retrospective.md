@@ -243,17 +243,37 @@ tribute-{project-slug}-{YYYYMMDD-HHmm}/
 **Overall process health: X/5** — [one-line summary]
 ```
 
-**Delivery:** The tribute folder is created inside the child project's `artifacts/tributes/` directory, then copied by the user into The Genesis `tributes/inbox/` for review:
+**Child project Genesis file-access rule:**
+
+> Child project agents **MUST NEVER** copy, edit, or delete any file inside The Genesis project folder.
+> The **only permitted exception** is copying a tribute folder into The Genesis `tributes/inbox/`.
+> All other Genesis files — `agent_docs/generic/`, `.claude/instructions/`, `CLAUDE.md`, etc. — are read-only from a child project's perspective. Suggestions for change must go through the tribute mechanism only.
+
+**Tribute folder structure (child project):**
+
+Tributes live in the child project's `artifacts/tributes/` folder, split into two states:
 
 ```
-[child project] artifacts/tributes/tribute-{project-slug}-{YYYYMMDD-HHmm}/
-    ├── TRIBUTE.md
-    ├── retrospective-{YYYYMMDD-HHmm}.md
-    ├── bug-report-{YYYYMMDD-HHmm}.md
-    ├── self-review-*.md
-    └── proposed/
-        └── {filename}.md
+[child project] artifacts/tributes/
+    tribute-{project-slug}-{YYYYMMDD-HHmm}/    ← unpaid (not yet submitted to The Genesis)
+        ├── TRIBUTE.md
+        ├── retrospective-{YYYYMMDD-HHmm}.md
+        ├── bug-report-{YYYYMMDD-HHmm}.md
+        ├── self-review-*.md
+        └── proposed/
+            └── {filename}.md
+    paid/
+        tribute-{project-slug}-{YYYYMMDD-HHmm}/    ← already submitted to The Genesis inbox
 ```
+
+**"Pay tribute(s) to The Genesis"** — when the user says this (or similar intent), execute:
+
+1. Find all tribute folders directly inside `artifacts/tributes/` (not inside `paid/`) — these are unpaid.
+2. For each unpaid tribute folder, copy it into The Genesis `tributes/inbox/`.
+3. Move the tribute folder from `artifacts/tributes/` into `artifacts/tributes/paid/`.
+4. Commit: `chore(tribute): pay tribute {tribute-folder-name} to The Genesis`.
+
+After this, The Genesis picks up the tribute from its `tributes/inbox/` for review.
 
 ```
 [The Genesis] tributes/

@@ -4,9 +4,12 @@ Execute this in full at the start of every conversation, before doing anything e
 
 ## Step -1 — Detect Context (The Genesis vs Child Project)
 
+> **Steps 0–4 (mode selection, session summary, drift checks) apply to child projects ONLY.**
+> The Genesis is the governing framework — it does not run a pipeline and has no mode to select.
+
 Read `CLAUDE.md` and check the project name (first `#` heading).
 
-- If the project is **The Genesis**: skip Steps 0–4 entirely. Instead, display a brief session summary showing recent git commits and any pending work (tributes in `tributes/inbox/`, any uncommitted changes), then stop and wait for the user's instruction.
+- If the project is **The Genesis**: **STOP here. Do not proceed to Step 0.** Instead, display a brief session summary showing recent git commits and any pending work (tributes in `tributes/inbox/`, any uncommitted changes), then wait for the user's instruction.
 - If the project is **any other project (child project)**: continue to Step 0 below.
 
 ---
