@@ -102,10 +102,21 @@ If all four files exist with real content → proceed and note: `✅ Architectur
 **Autopilot mode:**
 - After each stage completes with `STATUS: COMPLETE`, **immediately proceed to the next stage** — do NOT ask the user for permission
 - Mark intermediate deliverables as `🤖 Auto-approved` in the pipeline status table
-- Continue spawning the next agent in sequence until either:
-  - A stage returns `STATUS: BLOCKED` or `STATUS: FAILED` with a `GATE:` → **STOP** and present the gate to the user for decision
-  - All stages are complete
-- The pipeline runs end-to-end without human intervention unless a gate fires
+- Continue spawning the next agent in sequence until all stages are complete
+- The pipeline runs end-to-end without human intervention unless a human-decision gate fires
+
+**Autopilot — handling fixable blockers (auto-remediate):**
+When a review stage (code-reviewer, tester, security-auditor, compliance-officer, uiux-reviewer) identifies **fixable code issues** (bugs, security vulnerabilities, missing sanitisation, unhandled errors, missing lockfiles, etc.):
+1. Do NOT stop to ask the user
+2. Immediately spawn the `developer` agent to fix all identified issues
+3. After fixes are applied, re-run the stage that found the issues to verify the fixes
+4. If the re-run passes → continue to the next stage
+5. If the re-run still fails after **2 fix attempts** → STOP and escalate to the user with a summary of what was tried
+
+This applies to any issue that can be resolved by changing code, config, or dependencies. The orchestrator must not ask "Want me to fix these?" — it must just fix them.
+
+**Autopilot — accepted risks:**
+If a review stage flags an item as `Accepted Risk` (e.g. "MFA deferred to v1.1"), log it in the Decision Log but do not block the pipeline. Accepted risks are not fixable blockers — they are documented trade-offs.
 
 **Manual mode:**
 - After each stage completes, present the output summary and ask:
@@ -118,4 +129,4 @@ If all four files exist with real content → proceed and note: `✅ Architectur
 - `requirements-sign-off` — requirements must be confirmed before architecture
 - `architecture-sign-off` — all 5 deliverables must be approved before development
 - `staging-sign-off` — staging must pass before production deploy
-- Any `BLOCKED` or `FAILED` status from any agent
+- `production-deploy` — production deployment must be explicitly approved
