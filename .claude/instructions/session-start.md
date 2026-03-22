@@ -156,6 +156,9 @@ Commands
 - If no artifact yet: show `—` for Last Run and expected output folder for Deliverable
 - If all stages "Not started": show all as ⏳
 
+**IMPORTANT — Live pipeline status:**
+When the user asks about pipeline status at ANY point during a session (not just at startup), **always re-read `agent_docs/project/pipeline.md` fresh from disk**. Do NOT rely on the version read at session start — another session may be running the pipeline and updating the file in real time.
+
 ## Step 2 — First-Session Detection
 
 If ALL pipeline stages are "Not started", this is the first session. Display:

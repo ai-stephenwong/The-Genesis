@@ -89,7 +89,9 @@ If all four files exist with real content → proceed and note: `✅ Architectur
 
 - Spawn the required agent(s) with their defined input paths from `pipeline.md`
 - For independent stages (code-reviewer + tester + uiux-reviewer), spawn in parallel
-- Update the Pipeline Status table in `agent_docs/project/pipeline.md` after each stage completes
+- **Update the Pipeline Status table in `agent_docs/project/pipeline.md` at TWO points for each stage:**
+  1. **Before spawning** — mark the stage as `🔄 In progress` with the current timestamp. Write the file immediately so other sessions can see it.
+  2. **After completion** — mark the stage as `✅ Completed`, `🤖 Auto-approved`, or `❌ Failed` with the completion timestamp. Write the file immediately.
 
 ---
 
