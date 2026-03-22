@@ -175,6 +175,49 @@ GET /health
 
 **Frontend build info** — for Vite/Next.js frontends, inject the same values at build time as `VITE_GIT_COMMIT` / `NEXT_PUBLIC_GIT_COMMIT` etc. and expose them in an HTML `<meta name="build-info">` tag or a static `GET /build-info.json` endpoint so the deployment can be traced from the browser.
 
+## Deployment Sanity Check
+
+> **Before running any test suite, smoke test, or manual test against a deployed environment, run this check.** It verifies that every server is running the expected code and that its build timestamps are internally consistent. If any check fails, halt and warn — do not run tests against a stale or misconfigured deployment.
+
+### Algorithm (run against every server: API, CMS API, any other backend service)
+
+**Step 1 — Fetch health from each server:**
+```
+GET {server-url}/health
+```
+If the endpoint returns non-200 or is unreachable: HALT — server is not running.
+
+**Step 2 — Run three checks per server:**
+
+| Check | Condition | Severity | Action if violated |
+|---|---|---|---|
+| **Causality** | `deploy_time > git_commit_time` | HALT | Impossible — server is reporting a deploy before the commit; likely a CI env var injection bug |
+| **Commit match** | `git_commit == expected_sha` | HALT | Server is running a different commit than expected; likely a stale deployment or wrong branch |
+| **Freshness** | `deploy_time >= pipeline_start_time` (CI) or `deploy_time` within last 24 h (manual) | WARN | Server may not have been redeployed after the latest push; proceed with caution |
+
+`expected_sha` = `$GITHUB_SHA` (short form) when running in CI; `git rev-parse --short HEAD` when running locally.
+
+**Step 3 — Frontend build info check (if exposed):**
+Fetch the frontend's build info (`GET {frontend-url}/build-info.json` or read `<meta name="build-info">`). Apply the same commit match and causality checks using `VITE_GIT_COMMIT` / `VITE_DEPLOY_TIME`.
+
+**Step 4 — Output on failure:**
+```
+⚠️  DEPLOYMENT SANITY CHECK FAILED — tests halted
+
+  Server          : API  (https://project-api.workers.dev)
+  Check failed    : Commit match
+  Expected commit : abc1234f   ← GITHUB_SHA / git HEAD
+  Actual commit   : 9f8e7d6c   ← from /health git_commit
+  git_commit_time : 2026-03-22T08:30:00Z
+  deploy_time     : 2026-03-22T07:45:12Z  ← before commit time!
+
+  Action required : Verify the correct version is deployed before
+                    re-running tests. Check the GitHub Actions run
+                    for this branch.
+```
+
+Print a row per server. Any HALT-level failure stops all tests immediately. WARN-level failures print the warning but allow tests to proceed.
+
 ## Data Classification in Responses
 `ISO 27001: 5.12, 5.13, 8.11`
 
