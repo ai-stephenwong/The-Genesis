@@ -90,3 +90,30 @@ If all four files exist with real content → proceed and note: `✅ Architectur
 - Spawn the required agent(s) with their defined input paths from `pipeline.md`
 - For independent stages (code-reviewer + tester + uiux-reviewer), spawn in parallel
 - Update the Pipeline Status table in `agent_docs/project/pipeline.md` after each stage completes
+
+---
+
+## Step 4 — Stage progression (Autopilot vs Manual)
+
+**Check the current session mode** (set during session-start):
+
+**Autopilot mode:**
+- After each stage completes with `STATUS: COMPLETE`, **immediately proceed to the next stage** — do NOT ask the user for permission
+- Mark intermediate deliverables as `🤖 Auto-approved` in the pipeline status table
+- Continue spawning the next agent in sequence until either:
+  - A stage returns `STATUS: BLOCKED` or `STATUS: FAILED` with a `GATE:` → **STOP** and present the gate to the user for decision
+  - All stages are complete
+- The pipeline runs end-to-end without human intervention unless a gate fires
+
+**Manual mode:**
+- After each stage completes, present the output summary and ask:
+  ```
+  Stage {N} ({agent-name}) complete. Proceed to stage {N+1} ({next-agent})? [Y/n]
+  ```
+- Wait for user confirmation before spawning the next agent
+
+**Gates that always require human approval (even in Autopilot):**
+- `requirements-sign-off` — requirements must be confirmed before architecture
+- `architecture-sign-off` — all 5 deliverables must be approved before development
+- `staging-sign-off` — staging must pass before production deploy
+- Any `BLOCKED` or `FAILED` status from any agent
