@@ -333,7 +333,7 @@ ARTIFACTS: artifacts/code-review/review-YYYYMMDD-HHmm.md
 - Flag gaps in coverage
 - **Authentication flow integration test first:** For any project with authentication, write the full auth integration test before all others — covering: login → session/token storage → authenticated request → token refresh → logout. This is the highest-risk cross-service flow and must be verified end-to-end, not just at the unit level.
 - **Cross-service smoke tests:** Write automated smoke tests that verify: (1) at least one full frontend → API → database round-trip, (2) CORS preflight from the deployed frontend origin returns the correct `Access-Control-Allow-Origin`, (3) session/cookie round-trip works correctly across origins in the target environment.
-- **Bug report — primary responsibility:** The tester owns `artifacts/development/bug-report-YYYYMMDD-HHmm.md`. Create it when the first failure is found. For every subsequent bug or issue confirmed, **append a new `BUG-XX` entry to the same current file** — do not create a new file, do not batch. There is exactly one active bug report at a time (the one with `Status: OPEN`). The bug report is the single source of truth consumed by the retrospective-analyst.
+- **Bug report — primary responsibility:** The tester owns `artifacts/development/bug-report-YYYYMMDD-HHmm.md`. Create it when the first failure is found. For every subsequent bug or issue confirmed, **append a new entry to the same current file** — do not create a new file, do not batch. There is exactly one active bug report at a time (the one with `Status: OPEN`). The bug report is the single source of truth consumed by the retrospective-analyst. Bug IDs use the format **`BUG-{round}-{serial}`** where `{round}` is the two-digit retrospective cycle number (`01`, `02`, …) and `{serial}` is a three-digit sequential number within that cycle (`001`, `002`, …) — e.g. `BUG-01-001`, `BUG-01-002`, `BUG-02-001`. The round number matches the retrospective round this bug batch belongs to (start at `01` for the first cycle; increment when a new bug report is opened after a freeze).
 - **Record project owner issues:** After a dev or staging environment is deployed, the project owner may submit bugs or issues directly. The tester must record these in the active bug report exactly as any test-discovered issue. Owner-submitted issues are first-class bugs.
 - **Bug report freeze rule:** Once a retrospective is triggered against a bug report, that file is **frozen** — no further edits or appends. Any bugs or issues found after that point must go into a **new** `bug-report-YYYYMMDD-HHmm.md` file with a new timestamp.
 
@@ -364,11 +364,12 @@ ARTIFACTS: tests/, artifacts/test/results-YYYYMMDD-HHmm.md
 ```markdown
 # Bug Report — YYYY-MM-DD HH:mm
 ## Project: {project-slug}
+## Retro Round: {N}
 ## Status: OPEN | FROZEN
 
 ## Bugs / Issues
 
-### BUG-01 — [Title]
+### BUG-01-001 — [Title]
 **Reported by:** tester | project owner
 **Found in:** {environment} — YYYY-MM-DD
 **Severity:** Critical | High | Medium | Low
@@ -377,7 +378,7 @@ ARTIFACTS: tests/, artifacts/test/results-YYYYMMDD-HHmm.md
 **Actual:** [actual behaviour]
 **Suspected agent scope:** [which pipeline agent's responsibility may have missed this]
 
-(repeat for each bug)
+(repeat for each bug — BUG-01-002, BUG-01-003, …)
 
 ## Summary
 Total: {N} — Critical: {N}  High: {N}  Medium: {N}  Low: {N}
