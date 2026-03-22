@@ -152,8 +152,28 @@ All errors must use this exact shape — do not deviate:
 Every service must expose:
 ```
 GET /health
-→ 200 { "status": "ok", "version": "1.2.3", "uptime": 3600 }
+→ 200 {
+  "status": "ok",
+  "version": "1.2.3",
+  "git_commit": "abc1234f",
+  "git_commit_time": "2026-03-22T08:30:00Z",
+  "deploy_time": "2026-03-22T08:45:12Z",
+  "uptime": 3600
+}
 ```
+
+| Field | Source | Description |
+|---|---|---|
+| `status` | hardcoded `"ok"` | Service is healthy and reachable |
+| `version` | package.json / app constant | Semantic version of the deployed artifact |
+| `git_commit` | env var `GIT_COMMIT` (injected by CI) | Short SHA of the deployed commit |
+| `git_commit_time` | env var `GIT_COMMIT_TIME` (injected by CI) | ISO 8601 timestamp of the commit |
+| `deploy_time` | env var `DEPLOY_TIME` (injected by CI) | ISO 8601 timestamp of when this deployment completed |
+| `uptime` | runtime calculation | Seconds since process start |
+
+`git_commit`, `git_commit_time`, and `deploy_time` are injected as environment variables by the CI/CD pipeline at deploy time (see devops-engineer responsibilities in `agent-roles.md`). If the env vars are absent (e.g. local dev), omit those fields or return `null` — never return placeholder strings.
+
+**Frontend build info** — for Vite/Next.js frontends, inject the same values at build time as `VITE_GIT_COMMIT` / `NEXT_PUBLIC_GIT_COMMIT` etc. and expose them in an HTML `<meta name="build-info">` tag or a static `GET /build-info.json` endpoint so the deployment can be traced from the browser.
 
 ## Data Classification in Responses
 `ISO 27001: 5.12, 5.13, 8.11`

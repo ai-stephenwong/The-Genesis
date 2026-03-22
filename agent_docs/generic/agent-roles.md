@@ -581,6 +581,19 @@ ARTIFACTS: artifacts/ux-review/review-YYYYMMDD-HHmm.md
   |---|---|---|---|---|
   | (example) media-variants-dev | Cloudflare Queue | dev | `wrangler queues create media-variants-dev` | [ ] |
 
+- **Build metadata injection (mandatory for every deploy step):** The CI/CD pipeline must inject the following environment variables into every deploy so the `/health` endpoint and frontend build info can report them:
+
+  | Env var | GitHub Actions source | Used by |
+  |---|---|---|
+  | `GIT_COMMIT` | `${{ github.sha }}` (short: `${{ github.sha \| slice(0,8) }}`) | API `/health` response |
+  | `GIT_COMMIT_TIME` | `${{ github.event.head_commit.timestamp }}` | API `/health` response |
+  | `DEPLOY_TIME` | `$(date -u +%Y-%m-%dT%H:%M:%SZ)` captured in the deploy step | API `/health` response |
+  | `VITE_GIT_COMMIT` / `NEXT_PUBLIC_GIT_COMMIT` | `${{ github.sha }}` | Frontend build (Vite/Next.js) |
+  | `VITE_GIT_COMMIT_TIME` / `NEXT_PUBLIC_GIT_COMMIT_TIME` | `${{ github.event.head_commit.timestamp }}` | Frontend build |
+  | `VITE_DEPLOY_TIME` / `NEXT_PUBLIC_DEPLOY_TIME` | deploy step timestamp | Frontend build |
+
+  For Cloudflare Workers: set `GIT_COMMIT`, `GIT_COMMIT_TIME`, and `DEPLOY_TIME` as `[vars]` in the deploy step (or `wrangler secret put` for sensitive envs). For Vercel: set `VITE_*` / `NEXT_PUBLIC_*` env vars before triggering the build.
+
 - **Database Migration Pipeline Step (mandatory for all SQL database projects):** The CI/CD pipeline must include a migration step that runs before the application deploys to any environment: (1) run the ORM migration tool (`drizzle-kit migrate`, `prisma migrate deploy`, `alembic upgrade head`, etc.) against the environment's database; (2) verify exit code 0 — non-zero is a hard blocker, deploy does not proceed; (3) verify schema is applied with a table-existence or health check query. Before first deployment to any environment, also validate that generated SQL parses and applies cleanly on a scratch/test database — this catches ORM codegen bugs (e.g. missing `DEFAULT` value on array columns) before they reach a real environment. The Pre-Deployment Checklist item "migrations run" must be enforced by the CI/CD pipeline, not left as a manual checkbox.
 
 **Must NOT:**
