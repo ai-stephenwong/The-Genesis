@@ -14,12 +14,29 @@ Read `CLAUDE.md` and check the project name (first `#` heading).
 
 ---
 
-## Step 0 — Mode Selection
+## Step 0 — Prerequisites Reminder and Mode Selection
 
-Display the following prompt and wait for the user's choice before doing anything else:
+Before asking the user to choose a mode, display the prerequisites checklist so they know what should be in place:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Before we begin, please confirm these are ready:
+
+  [ ] Requirements files added to
+      agent_docs/project/specs/requirements-include-files/
+      (at least one real file — not just the default template)
+  [ ] Doppler project created with DATABASE_URL configured
+      (DOPPLER_TOKEN set in ~/.zshrc for unattended access)
+  [ ] MCP servers connected (GitHub, Vercel,
+      Cloudflare, Neon, Resend, Upstash)
+  [ ] Tool permissions pre-approved in .claude/settings.json
+      (no mid-run prompts)
+
+  If any item is not ready, you can still proceed in
+  Manual mode but the pipeline will pause at the first
+  missing prerequisite.
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
   Choose operating mode for this session:
 
   1) Autopilot  — Claude runs everything unattended.
@@ -33,31 +50,11 @@ Display the following prompt and wait for the user's choice before doing anythin
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
 
-If the user chooses **1 — Autopilot**, display this prerequisite check before proceeding:
+If the user chooses **1 — Autopilot**, confirm readiness:
 
 ```
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   Autopilot mode selected.
-
-  For a truly unattended run, confirm the following
-  are already in place:
-
-  [ ] DATABASE_URL is loaded in the shell environment
-      (only credential still needed — all others handled
-       by MCP: GitHub, Vercel, Cloudflare, Resend, Upstash)
-      Run: source .secrets/load-credentials.sh
-  [ ] DOPPLER_TOKEN set in ~/.zshrc for unattended access
-      (free service token — no login or Touch ID needed)
-  [ ] All pipeline tool permissions are pre-approved
-      in .claude/settings.json (no mid-run prompts)
-  [ ] MCP servers are connected (GitHub, Vercel,
-      Cloudflare, Neon, Resend, Upstash)
-
-  If any item is not ready, the session will pause
-  mid-run waiting for human input.
-
-  Ready to proceed? [Y / n]:
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  All prerequisites confirmed? [Y / n]:
 ```
 
 Wait for confirmation before continuing.
@@ -102,7 +99,7 @@ Pipeline Status
        ↑ 3a and 3b run in parallel
   4a   code-reviewer          ⏳ Not started  —               artifacts/code-review/review-*.md
   4b   tester                 ⏳ Not started  —               artifacts/test/results-*.md
-  4c   ux-reviewer            ⏳ Not started  —               artifacts/ux-review/review-*.md
+  4c   uiuiux-reviewer          ⏳ Not started  —               artifacts/uiux-review/review-*.md
        ↑ 4a, 4b and 4c run in parallel
   5    security-auditor       ⏳ Not started  —               artifacts/security/audit-*.md
   6    compliance-officer     ⏳ Not started  —               artifacts/compliance/compliance-*.md
@@ -143,7 +140,7 @@ Commands
 **Populate the table from `agent_docs/project/pipeline.md`:**
 - Use Last Run date and artifact path from the pipeline status table
 - 3b (devops-engineer) only appears if active in pipeline.md
-- 4c (ux-reviewer) only appears if active in pipeline.md
+- 4c (uiux-reviewer) only appears if active in pipeline.md
 - If no artifact yet: show `—` for Last Run and expected output folder for Deliverable
 - If all stages "Not started": show all as ⏳
 

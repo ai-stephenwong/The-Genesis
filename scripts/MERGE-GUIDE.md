@@ -68,7 +68,7 @@ active/inactive agent toggles, or a Pipeline Status table with run history.
    - Keep your project-specific values (actual URLs, real paths) — do not revert to placeholders
 
 3. **Update the Pipeline Stages diagram:**
-   - Add any new agents from the template (e.g. `ux-reviewer`, `devops-engineer`)
+   - Add any new agents from the template (e.g. `uiux-reviewer`, `devops-engineer`)
    - Keep your project-specific input/output paths
    - Mark any agents as `[INACTIVE]` if they don't apply to this project
 

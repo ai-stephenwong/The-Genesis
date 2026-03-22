@@ -19,6 +19,8 @@
 ```
 requirements-analyst
         ↓
+uiux-reviewer         ← reviews mockups/design files (skip if no mockups exist)
+        ↓
 solution-architect
         ↓
 developer(s)          ← parallel per feature/module
@@ -63,7 +65,7 @@ Self-review format and scoring rubric are defined under §12 `retrospective-anal
 
 | Contract | Paths |
 |---|---|
-| **Reads** | `agent_docs/project/specs/requirements-include-files/*.md` |
+| **Reads** | `agent_docs/project/specs/requirements-include-files/*` (all files — `.md`, `.html`, `.png`, `.pdf`, etc.) |
 | **Writes** | `artifacts/requirements/analysis-YYYYMMDD-HHmm.md` |
 
 **Responsibilities:**
@@ -71,6 +73,7 @@ Self-review format and scoring rubric are defined under §12 `retrospective-anal
 - Identify ambiguities, contradictions, and missing information
 - Flag requirements that conflict with generic standards (NFR, security, API conventions) — list each conflict in the output under "Conflicts with Company Standards"; these become inputs for the solution-architect's conflict resolution process
 - Produce a clear, numbered requirements analysis ready for the architect
+- **Mockup Coverage Matrix (mandatory when mockup files exist):** Scan `requirements-include-files/` for all visual mockup files (`.html`, `.png`, `.jpg`, `.pdf`, `.fig`, `.sketch`). For every mockup found, produce a coverage row mapping it to one or more numbered requirements. Flag any mockup that has no corresponding requirement (orphan mockup) and any requirement that has no corresponding mockup (missing visual). Include the matrix in the output artifact — it is consumed by the `uiux-reviewer`, `solution-architect`, and `developer`
 
 **Must NOT:**
 - Design the solution or suggest architecture
@@ -85,6 +88,9 @@ Self-review format and scoring rubric are defined under §12 `retrospective-anal
 ## Non-Functional Requirements
 ## Ambiguities & Open Questions
 ## Conflicts with Company Standards
+## Mockup Coverage Matrix
+| Mockup file | Requirement IDs | Coverage status |
+|---|---|---|
 ## Recommended Clarifications
 ## PILOT STATUS
 STATUS: COMPLETE | BLOCKED | FAILED
@@ -96,13 +102,74 @@ ARTIFACTS: artifacts/requirements/analysis-YYYYMMDD-HHmm.md
 
 ---
 
-### 2. `solution-architect`
+### 2. `uiux-reviewer`
+
+**Role:** Review all visual mockups and design files for design quality, consistency, accessibility, and responsive design. Produce actionable design instructions that the solution-architect and developer must follow. **Skip this agent if no mockup or design files exist in `requirements-include-files/`.**
+
+| Contract | Paths |
+|---|---|
+| **Reads** | `agent_docs/project/specs/requirements-include-files/*` (mockup files — `.html`, `.png`, `.jpg`, `.pdf`, `.fig`), `artifacts/requirements/analysis-*.md` (latest — for the Mockup Coverage Matrix), `agent_docs/generic/uiux-standards.md` |
+| **Writes** | `artifacts/uiux-review/review-YYYYMMDD-HHmm.md` |
+
+**Responsibilities:**
+- Review every mockup file listed in the Mockup Coverage Matrix from the requirements analysis
+- **Design consistency:** Verify consistent use of colours, typography, spacing, icons, and component patterns across all mockups. Identify a design system or propose one if none is apparent
+- **Accessibility audit:** Check mockups against `uiux-standards.md` — colour contrast (WCAG AA minimum), touch target sizes, text hierarchy, focus order, ARIA patterns. Flag violations with specific remediation instructions
+- **Responsive design assessment:** Evaluate each mockup for responsive breakpoints. If mockups only show one viewport, specify how each layout should adapt to mobile / tablet / desktop
+- **Component breakdown:** List every distinct UI component visible across all mockups. Group into shared (reusable) vs page-specific. This feeds directly into the solution-architect's component hierarchy
+- **Interaction patterns:** Identify hover states, transitions, modals, dropdowns, and navigation flows implied by the mockups. Document expected behaviour that may not be obvious from static mockups
+- **Design instructions for developer:** For each mockup, produce a section of concrete, implementable instructions: layout structure (flex/grid), spacing values, colour tokens, font sizes, and component nesting. These instructions are binding — the developer must follow them
+- **Flag design gaps:** If a requirement has no mockup, or a mockup is ambiguous (e.g. missing states like error, empty, loading), flag it as a design gap and recommend what the owner should provide
+
+**Must NOT:**
+- Write application code
+- Design the technical architecture
+- Override the project owner's design intent — advise and flag issues, but do not redesign without approval
+- Skip accessibility checks
+
+**Output format:**
+```markdown
+# UI/UX Design Review — YYYY-MM-DD HH:mm
+## Mockups Reviewed
+| Mockup file | Requirements covered | Design quality (1-5) |
+|---|---|---|
+## Design System
+  ### Colours (tokens)
+  ### Typography (scale)
+  ### Spacing (scale)
+  ### Shared Components
+## Per-Mockup Review
+  ### {mockup-filename}
+  **Layout:** [flex/grid structure, breakpoints]
+  **Components:** [list with nesting]
+  **Design instructions:** [concrete implementation guidance]
+  **Accessibility:** [issues found + remediation]
+  **Responsive:** [breakpoint behaviour]
+  **Interaction patterns:** [hover, transitions, navigation]
+## Design Gaps
+  [missing mockups, ambiguous states, incomplete flows]
+## Accessibility Summary
+  | Check | Status | Details |
+  |---|---|---|
+## Recommendations for Project Owner
+  [design clarifications needed before development]
+## PILOT STATUS
+STATUS: COMPLETE | BLOCKED | FAILED
+BLOCKED_REASON: (if BLOCKED — list design gaps requiring owner input)
+FAILED_REASON: (if FAILED)
+GATE: design-review (if BLOCKED on design gaps)
+ARTIFACTS: artifacts/uiux-review/review-YYYYMMDD-HHmm.md
+```
+
+---
+
+### 3. `solution-architect`
 
 **Role:** Design the technical architecture and produce all mandatory design deliverables before any implementation begins.
 
 | Contract | Paths |
 |---|---|
-| **Reads** | `artifacts/requirements/analysis-*.md` (latest), `agent_docs/project/specs/requirements-include-files/*.md`, `agent_docs/generic/nfr-baseline.md`, `agent_docs/generic/api-conventions.md`, `agent_docs/generic/deployment-{platform}.md` |
+| **Reads** | `artifacts/requirements/analysis-*.md` (latest), `artifacts/uiux-review/review-*.md` (latest, if exists), `agent_docs/project/specs/requirements-include-files/*`, `agent_docs/generic/nfr-baseline.md`, `agent_docs/generic/api-conventions.md`, `agent_docs/generic/deployment-{platform}.md` |
 | **Writes** | `agent_docs/project/architecture.md`, `agent_docs/project/er-diagram.md`, `agent_docs/project/specs/functional-specs.md`, `agent_docs/project/specs/api-spec.yaml`, `artifacts/architecture/design-YYYYMMDD-HHmm.md` |
 
 **Mandatory deliverables — ALL required before development starts:**
@@ -116,6 +183,7 @@ ARTIFACTS: artifacts/requirements/analysis-YYYYMMDD-HHmm.md
 | 5 | Platform compatibility matrix | Inside `architecture.md` | Library-by-library runtime compatibility sign-off |
 
 **Responsibilities:**
+- **Reference mockups in component/page design:** When the requirements analysis contains a Mockup Coverage Matrix, use the listed mockup files as primary input for defining frontend page structure, component hierarchy, and navigation flow. Every mockup must have a corresponding component or page in the architecture — flag any mockup not covered by the design
 - Define system components, data flows, and integration points
 - Select technology choices within the approved stack
 - **Produce architecture diagram** using Mermaid (`graph TD` or `C4Context`) — show all services, databases, external integrations, and data flow directions
@@ -178,7 +246,7 @@ ARTIFACTS: agent_docs/project/architecture.md, agent_docs/project/er-diagram.md,
 
 ---
 
-### 3. `developer`
+### 4. `developer`
 
 **Role:** Implement features according to architecture, requirements, and the approved API specification.
 
@@ -188,6 +256,7 @@ ARTIFACTS: agent_docs/project/architecture.md, agent_docs/project/er-diagram.md,
 | **Writes** | `src/` (application code), `artifacts/development/feature-{name}-YYYYMMDD-HHmm.md` (implementation notes) |
 
 **Responsibilities:**
+- **Implement against mockups:** Read mockup files directly from `requirements-include-files/`. Each page or component must visually match its corresponding mockup — layout, spacing, colours, typography, and element ordering. When a `uiux-reviewer` review exists, follow its design instructions. Flag any mockup that cannot be faithfully reproduced and raise it before proceeding
 - Implement features strictly per architecture, requirements, and `api-spec.yaml`
 - Follow company coding standards and project conventions
 - Generate the **full frontend API client** from `api-spec.yaml` using `@hey-api/openapi-ts` — this produces both TypeScript types **and** typed fetch functions keyed by `operationId`; never hand-write service layer functions or types to match the backend
@@ -268,7 +337,7 @@ ARTIFACTS: src/, artifacts/development/feature-YYYYMMDD-HHmm.md
 
 ---
 
-### 4. `code-reviewer`
+### 5. `code-reviewer`
 
 **Role:** Independently review code for correctness, standards compliance, and quality.
 
@@ -288,6 +357,7 @@ ARTIFACTS: src/, artifacts/development/feature-YYYYMMDD-HHmm.md
 - **Frontend route/link coverage** — for every navigation link (`<Link>`, `router.push()`, `redirect()`, `<a href>`, or framework equivalent) in the frontend, verify a corresponding route/view file exists; flag any link whose destination route is not built as Critical
 - **Runtime dependency wiring** — for every handler that reads a runtime-injected value (middleware-populated properties, dependency injection, context objects), verify the source is registered in the application bootstrap; flag any missing registration as Critical
 - **Infrastructure binding verification (serverless/edge projects):** Read the deployment manifest (`wrangler.toml`, `serverless.yml`, or platform equivalent) and verify that every binding name referenced in application code (`c.env.X`, `env.X`, `context.env.X`) matches a binding declared in the manifest. Flag any mismatch as Critical — an undeclared binding causes a silent runtime failure in all environments.
+- **Mockup fidelity check (frontend projects):** Compare rendered component/page output against the corresponding mockup files in `requirements-include-files/`. Flag deviations in layout, spacing, colours, typography, or element ordering as Major findings. If a `uiux-reviewer` review exists, verify its design instructions were followed
 - Check test coverage is adequate
 - Flag technical debt, maintainability issues, and risks
 
@@ -320,7 +390,7 @@ ARTIFACTS: artifacts/code-review/review-YYYYMMDD-HHmm.md
 
 ---
 
-### 5. `tester`
+### 6. `tester`
 
 **Role:** Independently verify that the implementation meets requirements through testing, and maintain the authoritative bug report for the project.
 
@@ -338,6 +408,7 @@ ARTIFACTS: artifacts/code-review/review-YYYYMMDD-HHmm.md
 - **Authentication flow integration test first:** For any project with authentication, write the full auth integration test before all others — covering: login → session/token storage → authenticated request → token refresh → logout. This is the highest-risk cross-service flow and must be verified end-to-end, not just at the unit level.
 - **Cross-service smoke tests:** Write automated smoke tests that verify: (1) at least one full frontend → API → database round-trip, (2) CORS preflight from the deployed frontend origin returns the correct `Access-Control-Allow-Origin`, (3) session/cookie round-trip works correctly across origins in the target environment.
 - **Bug report — primary responsibility:** The tester owns `artifacts/development/bug-report-YYYYMMDD-HHmm.md`. Create it when the first failure is found. For every subsequent bug or issue confirmed, **append a new entry to the same current file** — do not create a new file, do not batch. There is exactly one active bug report at a time (the one with `Status: OPEN`). The bug report is the single source of truth consumed by the retrospective-analyst. Bug IDs use the format **`BUG-{round}-{serial}`** where `{round}` is the two-digit retrospective cycle number (`01`, `02`, …) and `{serial}` is a three-digit sequential number within that cycle (`001`, `002`, …) — e.g. `BUG-01-001`, `BUG-01-002`, `BUG-02-001`. The round number matches the retrospective round this bug batch belongs to (start at `01` for the first cycle; increment when a new bug report is opened after a freeze).
+- **Visual regression check (frontend projects):** For each mockup in the Mockup Coverage Matrix, compare the rendered output against the mockup. Log any visual deviation (layout, colours, missing elements) as a bug in the active bug report with severity based on user impact
 - **Record project owner issues:** After a dev or staging environment is deployed, the project owner may submit bugs or issues directly. The tester must record these in the active bug report exactly as any test-discovered issue. Owner-submitted issues are first-class bugs.
 - **Bug report freeze rule:** Once a retrospective is triggered against a bug report, that file is **frozen** — no further edits or appends. Any bugs or issues found after that point must go into a **new** `bug-report-YYYYMMDD-HHmm.md` file with a new timestamp.
 
@@ -390,7 +461,7 @@ Total: {N} — Critical: {N}  High: {N}  Medium: {N}  Low: {N}
 
 ---
 
-### 6. `security-auditor`
+### 7. `security-auditor`
 
 **Role:** Independently audit the implementation for security vulnerabilities and compliance.
 
@@ -434,7 +505,7 @@ ARTIFACTS: artifacts/security/audit-YYYYMMDD-HHmm.md
 
 ---
 
-### 7. `compliance-officer`
+### 8. `compliance-officer`
 
 **Role:** Produce the final compliance report by checking all artifacts against all applicable standards.
 
@@ -504,53 +575,6 @@ ARTIFACTS: artifacts/compliance/compliance-YYYYMMDD-HHmm.md
 
 ---
 
-### 8. `ux-reviewer`
-
-**Role:** Independently review the frontend implementation against UI/UX standards, accessibility requirements, and the project design spec.
-
-| Contract | Paths |
-|---|---|
-| **Reads** | `src/` (frontend code), `agent_docs/generic/uiux-standards.md`, `agent_docs/project/specs/design.md`, `artifacts/development/feature-*.md` |
-| **Writes** | `artifacts/ux-review/review-YYYYMMDD-HHmm.md` |
-
-**Responsibilities:**
-- Verify the implementation matches the approved design spec (`specs/design.md`)
-- Check all UI/UX standards are met: accessibility (WCAG 2.1 AA), responsive design, touch targets, focus indicators
-- Verify sensitive data is masked per classification rules in the UI
-- Check loading, error, and empty states are implemented for all data-dependent views
-- Verify design tokens are used — no hardcoded colours, spacing, or typography
-- Check form labels, error messages, and validation patterns meet standards
-
-**Must NOT:**
-- Write or modify frontend code
-- Be the same agent instance as the developer
-- Approve designs that have not been implemented in code
-
-**Output format:**
-```markdown
-# UX Review — YYYY-MM-DD HH:mm
-## Scope
-## Design Spec Compliance
-## Accessibility Findings (WCAG 2.1 AA)
-## Responsive Design Check
-## Sensitive Data Display Check
-## Component & Token Usage
-## State Coverage (loading / error / empty)
-## Findings
-  ### Critical (must fix before release)
-  ### Major (should fix)
-  ### Minor (nice to fix)
-## Recommendation: Approve / Request Changes / Reject
-## PILOT STATUS
-STATUS: COMPLETE | BLOCKED | FAILED
-BLOCKED_REASON: (if BLOCKED — list Critical UX findings requiring fix)
-FAILED_REASON: (if FAILED)
-GATE: (omit if COMPLETE)
-ARTIFACTS: artifacts/ux-review/review-YYYYMMDD-HHmm.md
-```
-
----
-
 ### 9. `devops-engineer`
 
 **Role:** Set up and maintain CI/CD pipelines, infrastructure-as-code, and deployment configuration for all environments based on the chosen platform.
@@ -567,6 +591,7 @@ ARTIFACTS: artifacts/ux-review/review-YYYYMMDD-HHmm.md
 - Write Dockerfiles following container security best practices (non-root, minimal base image, pinned versions)
 - Configure secrets management integration (secret manager ARNs, Vault paths, Workers secrets)
 - Document environment URLs, service names, and runbook in `agent_docs/project/deployment.md`
+- **MUST DO — Add confirmed URLs to `.claude/settings.json`:** Whenever an environment URL is confirmed (first deploy, domain change, new environment), immediately add a `WebFetch(domain:{domain})` entry to the project's `.claude/settings.json` `permissions.allow` list. This permits `curl` and `WebFetch` to those URLs without prompting the user during smoke tests, health checks, and pipeline activity. Skipping this breaks Autopilot mode.
 - Ensure zero-downtime deployment is configured for production
 - **Cloudflare Workers: complete and document a pre-deploy readiness checklist** before marking the IaC artifact complete:
   - [ ] All `[PLACEHOLDER: ...]` values replaced with provisioned resource IDs
@@ -645,6 +670,7 @@ ARTIFACTS: .github/workflows/, infrastructure/, artifacts/devops/setup-YYYYMMDD-
 - Monitor the GitHub Actions run via GitHub MCP until it completes
 - **Run deployment sanity check before smoke tests:** Once the pipeline reports success, fetch `GET /health` from every deployed server and verify: `deploy_time > git_commit_time` (causality), `git_commit` matches the pushed commit SHA (commit match), and `deploy_time` is after the pipeline start time (freshness). If any HALT-level check fails, stop immediately and report — do not proceed to smoke tests. See `api-conventions.md` — Deployment Sanity Check.
 - Report the deployment result: pipeline pass/fail, environment URL, smoke test outcome
+- **MUST DO — Add confirmed URLs to `.claude/settings.json`:** If the deployment produces new or changed URLs, immediately add `WebFetch(domain:{domain})` entries to the project's `.claude/settings.json`. This is especially critical on first deployment when URLs are established for the first time.
 - If the CI/CD run fails: surface the failing step and reason; do not retry without understanding the root cause
 - If smoke tests fail: halt and report — do not mark the environment as passed
 
@@ -700,6 +726,7 @@ ARTIFACTS: artifacts/devops/deploy-{environment}-YYYYMMDD-HHmm.md
 - Monitor the GitHub Actions run via GitHub MCP until it completes
 - **Run deployment sanity check before smoke tests:** Once the pipeline reports success, fetch `GET /health` from every deployed server and verify: `deploy_time > git_commit_time` (causality), `git_commit` matches the pushed commit SHA (commit match), and `deploy_time` is after the pipeline start time (freshness). If any HALT-level check fails, stop immediately and report — do not proceed to smoke tests. See `api-conventions.md` — Deployment Sanity Check.
 - Report the deployment result: pipeline pass/fail, production URL, smoke test outcome
+- **MUST DO — Add production URLs to `.claude/settings.json`:** If production URLs are new or changed (e.g. custom domain configured), immediately add `WebFetch(domain:{domain})` entries to the project's `.claude/settings.json`.
 - If the CI/CD run fails: surface the failing step; do not retry without understanding root cause
 - If smoke tests fail: halt and escalate — never mark production as live without confirmed smoke test pass
 
@@ -883,7 +910,7 @@ ARTIFACTS: artifacts/retrospective/retrospective-YYYYMMDD-HHmm.md
 4. **If an artifact already exists and is recent**, the orchestrator may skip re-running that stage and proceed from the existing output — this is the **resume from breakpoint** pattern
 5. **Parallel execution** is allowed between stages with no dependency:
    - `developer` and `devops-engineer` can run in parallel after `solution-architect`
-   - `code-reviewer`, `tester`, and `ux-reviewer` can all run in parallel after `developer`
+   - `code-reviewer`, `tester`, and `uiux-reviewer` can all run in parallel after `developer`
    - `security-auditor` can start after `code-reviewer` completes
    - `compliance-officer` starts only after ALL other agents complete
 6. **A stage must not start** if its required input artifact is missing or flagged as incomplete

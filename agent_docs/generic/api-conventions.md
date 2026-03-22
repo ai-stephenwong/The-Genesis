@@ -45,7 +45,7 @@ If any agent discovers that a change to `api-spec.yaml` is needed during develop
 ### Status: PENDING APPROVAL
 ```
 
-This rule applies to **all agents** — developer, code-reviewer, tester, ux-reviewer, security-auditor. None may approve their own change requests.
+This rule applies to **all agents** — developer, code-reviewer, tester, uiux-reviewer, security-auditor. None may approve their own change requests.
 
 ### Enum & String Value Contract
 

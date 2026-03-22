@@ -15,6 +15,40 @@ If resuming from a breakpoint, identify the latest artifact from the last comple
 
 ---
 
+## Step 1b — Requirements Gate Check (before any pipeline stage)
+
+Before spawning **any** agent, verify that real requirements files exist in `agent_docs/project/specs/requirements-include-files/`.
+
+1. List all files in `agent_docs/project/specs/requirements-include-files/`.
+2. Exclude any file that contains only the default template content (placeholder text such as `<!-- Add your requirements here -->` or an empty body with only headings and no content).
+3. If **no non-template files remain** → **STOP** and alert:
+
+```
+🚫 Cannot start pipeline — Requirements gate failed.
+
+   The folder agent_docs/project/specs/requirements-include-files/
+   contains no requirements files (only default templates found).
+
+   The pipeline cannot proceed without at least one real requirements file.
+   Please add your requirements files to this folder before running the pipeline.
+```
+
+4. If non-template files exist, list them and ask the project owner to confirm:
+
+```
+📋 Requirements files found:
+
+   1. 01-functional.md          (last modified: YYYY-MM-DD)
+   2. 02-non-functional.md      (last modified: YYYY-MM-DD)
+   3. 03-integration.md         (last modified: YYYY-MM-DD)
+
+   Are these all the requirements files for this pipeline run? [Y/n]
+```
+
+**Do NOT proceed until the owner confirms.** If the owner says no or wants to add more files, wait for them to update the folder and re-run the check.
+
+---
+
 ## Step 2 — Architecture Gate Check (before developer agent only)
 
 Read `api-spec-required` from the Pipeline Configuration table in `pipeline.md`.
@@ -54,5 +88,5 @@ If all four files exist with real content → proceed and note: `✅ Architectur
 ## Step 3 — Spawn agents
 
 - Spawn the required agent(s) with their defined input paths from `pipeline.md`
-- For independent stages (code-reviewer + tester + ux-reviewer), spawn in parallel
+- For independent stages (code-reviewer + tester + uiux-reviewer), spawn in parallel
 - Update the Pipeline Status table in `agent_docs/project/pipeline.md` after each stage completes

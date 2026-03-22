@@ -193,11 +193,12 @@ Show a full summary including the confirmed folder name and ask: **"Create proje
 {project-slug}/
 ├── CLAUDE.md                          ← use template at bottom of this file
 ├── .claude/
-│   ├── settings.json                  ← copy from .claude/settings.json
+│   ├── settings.json                  ← GENERATE (not copy) — see Step 5b below
 │   ├── hooks/
 │   │   └── check-credential-inspection.py  ← copy from .claude/hooks/
 │   └── instructions/
-│       └── session-start.md           ← copy from .claude/instructions/session-start.md
+│       ├── session-start.md           ← copy from .claude/instructions/session-start.md
+│       └── run-pipeline.md            ← copy from .claude/instructions/run-pipeline.md
 ├── agent_docs/
 │   ├── generic/                       ← copy ALL generic files (including deployment-vercel-cloudflare.md)
 │   │   ├── api-conventions.md
@@ -234,7 +235,8 @@ Show a full summary including the confirmed folder name and ask: **"Create proje
 │   └── gh-push.sh                     ← copy from The Genesis scripts/
 ├── .secrets/                          ← gitignored — real credential files go here
 │   ├── manifest.yaml.template         ← copy from The Genesis .secrets/ — fill in Doppler project name
-│   └── load-credentials.sh.template   ← copy from The Genesis .secrets/ — source before Autopilot
+│   ├── load-credentials.sh.template   ← copy from The Genesis .secrets/ — source before Autopilot
+│   └── load-credentials.sh            ← auto-created: copy of template with {project} already filled in
 ├── src/                               ← all application source code repositories
 │   └── {repo-name}/                   ← one sub-folder per repo
 └── artifacts/                         ← agent pipeline outputs (timestamped)
@@ -242,7 +244,7 @@ Show a full summary including the confirmed folder name and ask: **"Create proje
     ├── architecture/
     ├── development/
     ├── code-review/
-    ├── ux-review/
+    ├── uiux-review/
     ├── test/
     ├── security/
     ├── devops/
@@ -250,6 +252,145 @@ Show a full summary including the confirmed folder name and ask: **"Create proje
     ├── compliance/
     └── tributes/                      ← tribute packages for The Genesis (one folder per round)
 ```
+
+---
+
+## Step 5b — Generate `.claude/settings.json` with project permissions
+
+**Do NOT copy The Genesis's `settings.json` — generate a fresh one for the child project.**
+
+All file operations (Read, Write, Edit) within the project folder and all sub-folders must be pre-approved so the pipeline runs without prompting the user.
+
+Generate `.claude/settings.json` with this structure (replace `{full-project-path}` and `{project-slug}`):
+
+```json
+{
+  "permissions": {
+    "allow": [
+      "Read({full-project-path}/*)",
+      "Write({full-project-path}/*)",
+      "Edit({full-project-path}/*)",
+      "Bash(git:*)",
+      "Bash(npm:*)",
+      "Bash(npx:*)",
+      "Bash(node:*)",
+      "Bash(cp:*)",
+      "Bash(mv:*)",
+      "Bash(mkdir:*)",
+      "Bash(mkdir -p:*)",
+      "Bash(ls:*)",
+      "Bash(find:*)",
+      "Bash(rm:*)",
+      "Bash(rm -r:*)",
+      "Bash(rm -rf:*)",
+      "Bash(zip:*)",
+      "Bash(unzip:*)",
+      "Bash(cat:*)",
+      "Bash(source:*)",
+      "Bash(chmod:*)",
+      "Bash(sed:*)",
+      "Bash(grep:*)",
+      "Bash(cd:*)",
+      "Bash(echo:*)",
+      "Bash(doppler:*)",
+      "Bash(/Users/stephen.wong/homebrew/bin/doppler:*)",
+      "Bash(/Users/stephen.wong/homebrew/bin/brew:*)",
+      "Bash(bash:*)",
+      "Bash(which:*)",
+      "Bash(sw_vers)",
+      "Bash(python3:*)",
+      "Bash(test:*)",
+      "Bash(wc:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(sort:*)",
+      "Bash(diff:*)",
+      "Bash(touch:*)",
+      "Bash(pwd)",
+      "Bash(env:*)",
+      "Bash(export:*)",
+      "Bash(tr:*)",
+      "Bash(cut:*)",
+      "Bash(awk:*)",
+      "Bash(xargs:*)",
+      "WebSearch",
+      "mcp__github__*",
+      "mcp__vercel__*",
+      "mcp__cloudflare__*",
+      "mcp__neon__*",
+      "mcp__resend__*",
+      "mcp__upstash__*"
+    ],
+    "deny": [],
+    "additionalDirectories": [
+      "/Users/stephen.wong/Projects-AI-Agents/-The Genesis"
+    ]
+  },
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/.claude/hooks/check-credential-inspection.py\""
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+This ensures:
+- All file reads, writes, and edits within the project folder are auto-approved
+- Common shell commands (git, npm, file ops) run without prompting
+- All MCP servers are pre-approved
+- The Genesis folder is accessible as an additional directory (for reading standards)
+- The credential-inspection hook runs on every Bash command
+
+---
+
+## Step 5c — MUST DO: Add environment URLs to permitted domains
+
+**This step applies at project creation AND at any later point when an environment URL is confirmed.**
+
+Whenever a deployment URL is confirmed — whether provided by Vercel, Cloudflare, a custom domain, or any other source — **immediately** add it to the project's `.claude/settings.json` `allow` list as a `WebFetch` entry. This prevents `curl` and `WebFetch` to those URLs from prompting the user during smoke tests, health checks, or any pipeline activity.
+
+**Format — add BOTH entries per domain:**
+```json
+"Bash(curl:https://{domain}/*)",
+"WebFetch(domain:{domain-without-protocol})"
+```
+
+**Example:** If the confirmed URLs are:
+- Frontend: `https://omnichat-v5-web.vercel.app`
+- API: `https://omnichat-v5-api.workers.dev`
+- CMS: `https://omnichat-v5-cms-web.vercel.app`
+
+Add these entries to `permissions.allow`:
+```json
+"Bash(curl:https://omnichat-v5-web.vercel.app/*)",
+"Bash(curl:https://omnichat-v5-api.workers.dev/*)",
+"Bash(curl:https://omnichat-v5-cms-web.vercel.app/*)",
+"WebFetch(domain:omnichat-v5-web.vercel.app)",
+"WebFetch(domain:omnichat-v5-api.workers.dev)",
+"WebFetch(domain:omnichat-v5-cms-web.vercel.app)"
+```
+
+> **No blanket `Bash(curl:*)` is permitted.** Only explicitly confirmed domain URLs may be added.
+
+**When to execute this step:**
+- At project creation if URLs are already known
+- When the devops-engineer confirms deployment URLs after first deploy
+- When a custom domain is configured
+- When any environment (dev / staging / production) URL changes
+- When Vercel preview deployment URLs are established
+
+**This is mandatory** — skipping this will cause every smoke test and health check to pause for user approval, breaking Autopilot mode
+- All MCP servers are pre-approved
+- The Genesis folder is accessible as an additional directory (for reading standards)
+- The credential-inspection hook runs on every Bash command
 
 ---
 
@@ -291,18 +432,18 @@ Display this message to the user:
 📁 Folder: {full-path-to-project-folder}
 
 ─────────────────────────────────────────
-Credential setup (Doppler) — do this once before running Autopilot:
+Credential setup (Doppler) — only needed when the project has a database:
+
+  Doppler is already authenticated locally (via `doppler login`).
+  The Genesis has auto-created .secrets/load-credentials.sh with the
+  project name pre-filled. You only need to:
 
   1. Create a Doppler project named "{folder-name}" at dashboard.doppler.com
+     (or run: doppler projects create {folder-name})
   2. Add DATABASE_URL to each config (dev / staging / production)
-  3. Run in the project folder:
-       doppler setup --project {folder-name}
-  4. Copy and fill the credential loader:
-       cp .secrets/load-credentials.sh.template .secrets/load-credentials.sh
-     (already has your project name filled in — just verify)
-  5. Test:
-       source .secrets/load-credentials.sh
-       echo $DATABASE_URL
+
+  No DOPPLER_TOKEN in ~/.zshrc is needed — local `doppler login` session is sufficient.
+  DOPPLER_TOKEN is only required for CI/CD (GitHub Actions).
 
 ─────────────────────────────────────────
 Platform deployment file included: {deployment-platform-filename}

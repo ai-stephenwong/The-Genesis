@@ -248,7 +248,7 @@ for DEST in "${TARGETS[@]}"; do
   fi
 
   # artifacts subfolders
-  for artifact_dir in requirements architecture development code-review ux-review test security devops compliance; do
+  for artifact_dir in requirements architecture development code-review uiux-review test security devops compliance; do
     artifact_path="$DEST/artifacts/$artifact_dir"
     if [[ ! -d "$artifact_path" ]]; then
       mkdir -p "$artifact_path"

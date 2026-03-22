@@ -24,7 +24,7 @@
 | `devops-engineer` | ✅ | Runs in parallel with developer |
 | `code-reviewer` | ✅ | Must be different instance from developer |
 | `tester` | ✅ | Must be different instance from developer |
-| `ux-reviewer` | ✅ | Remove row if project has no frontend |
+| `uiuiux-reviewer` | ✅ | Remove row if project has no frontend |
 | `security-auditor` | ✅ | |
 | `compliance-officer` | ✅ | Quality gate — must PASS before any deployment |
 | `retrospective-analyst` | ✅ | Meta-pipeline — triggered by bug batches, not part of standard build flow |
@@ -49,7 +49,7 @@
 | `artifacts/architecture/` | solution-architect design snapshots |
 | `artifacts/development/` | developer implementation notes + bug reports + API spec change requests |
 | `artifacts/code-review/` | code-reviewer reports + self-reviews |
-| `artifacts/ux-review/` | ux-reviewer reports + self-reviews |
+| `artifacts/uiux-review/` | uiuiux-reviewer reports + self-reviews |
 | `artifacts/test/` | tester results + self-reviews |
 | `artifacts/security/` | security-auditor reports + self-reviews |
 | `artifacts/devops/` | devops-engineer setup notes + deploy records |
@@ -86,12 +86,12 @@
        artifacts/development/                           agent_docs/project/deployment.md (updated)
          feature-{name}-YYYYMMDD-HHmm.md               artifacts/devops/setup-YYYYMMDD-HHmm.md
         ↓
-[code-reviewer] ─── [tester] ─── [ux-reviewer]   ← all parallel
+[code-reviewer] ─── [tester] ─── [uiuiux-reviewer]   ← all parallel
   in:  src/              in:  src/                  in:  src/ (frontend)
        artifacts/              requirements/              agent_docs/generic/uiux-standards.md
          development/*.md      analysis-*.md              agent_docs/project/specs/design.md
        architecture.md         commands.md                artifacts/development/*.md
-       api-spec.yaml      out: tests/               out: artifacts/ux-review/
+       api-spec.yaml      out: tests/               out: artifacts/uiux-review/
        api-conventions.md      artifacts/test/              review-YYYYMMDD-HHmm.md
   out: artifacts/                results-YYYYMMDD-HHmm.md
          code-review/
@@ -110,7 +110,7 @@
        artifacts/architecture/design-*.md (latest)
        artifacts/development/*.md (all)
        artifacts/code-review/review-*.md (latest)
-       artifacts/ux-review/review-*.md (latest)
+       artifacts/uiux-review/review-*.md (latest)
        artifacts/test/results-*.md (latest)
        artifacts/security/audit-*.md (latest)
        artifacts/devops/setup-*.md (latest)
@@ -167,7 +167,7 @@ If the same bug batch triggers multiple fix cycles, repeat the above with an inc
 | `developer` | `artifacts/development/self-review-YYYYMMDD-HHmm.md` |
 | `code-reviewer` | `artifacts/code-review/self-review-YYYYMMDD-HHmm.md` |
 | `tester` | `artifacts/test/self-review-YYYYMMDD-HHmm.md` |
-| `ux-reviewer` | `artifacts/ux-review/self-review-YYYYMMDD-HHmm.md` |
+| `uiuiux-reviewer` | `artifacts/uiux-review/self-review-YYYYMMDD-HHmm.md` |
 | `security-auditor` | `artifacts/security/self-review-YYYYMMDD-HHmm.md` |
 | `compliance-officer` | `artifacts/compliance/self-review-YYYYMMDD-HHmm.md` |
 | `devops-engineer` | `artifacts/devops/self-review-YYYYMMDD-HHmm.md` |
@@ -210,7 +210,7 @@ All other stages are sequential.
 |---|---|
 | developer ↔ code-reviewer | Must be **different** agent instances — never the same |
 | developer ↔ tester | Must be **different** agent instances |
-| developer ↔ ux-reviewer | Must be **different** agent instances |
+| developer ↔ uiuiux-reviewer | Must be **different** agent instances |
 | developer ↔ security-auditor | Must be **different** agent instances |
 | code-reviewer ↔ compliance-officer | Must be **different** agent instances |
 | retrospective-analyst ↔ any reviewed agent | Must be **different** agent instances — retrospective-analyst cannot review itself |
@@ -227,7 +227,7 @@ All other stages are sequential.
 | 3b | devops-engineer | — | — | Not started |
 | 4a | code-reviewer | — | — | Not started |
 | 4b | tester | — | — | Not started |
-| 4c | ux-reviewer | — | — | Not started |
+| 4c | uiuiux-reviewer | — | — | Not started |
 | 5 | security-auditor | — | — | Not started |
 | 6 | compliance-officer | — | — | Not started |
 | 7 | deploy-staging | — | — | Not started |
