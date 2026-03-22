@@ -27,8 +27,20 @@ Before asking the user to choose a mode, display the prerequisites checklist so 
       (at least one real file — not just the default template)
   [ ] Doppler project created with DATABASE_URL configured
       (DOPPLER_TOKEN set in ~/.zshrc for unattended access)
-  [ ] MCP servers connected (GitHub, Vercel,
-      Cloudflare, Neon, Resend, Upstash)
+  [ ] MCP servers connected (GitHub, Cloudflare,
+      Resend, Upstash — these use tokens and always work)
+      Vercel and Neon use OAuth and only connect in one
+      project at a time. If they show "not connected":
+        - They work in The Genesis session (OAuth host)
+        - In child projects, use CLI fallback instead:
+            vercel login   (one-time, persistent)
+            neonctl auth   (one-time, persistent)
+          After login, all vercel/neonctl CLI commands work
+          without tokens or env vars.
+      If any MCP server shows "Needs authentication",
+      clear the auth cache first:
+        echo '{}' > ~/.claude/mcp-needs-auth-cache.json
+      Then restart Claude Code.
   [ ] Tool permissions pre-approved in .claude/settings.json
       (no mid-run prompts)
 

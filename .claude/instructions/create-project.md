@@ -316,7 +316,7 @@ Generate `.claude/settings.json` with this structure (replace `{full-project-pat
       "WebSearch",
       "mcp__github__*",
       "mcp__vercel__*",
-      "mcp__cloudflare__*",
+      "mcp__cloudflare-api__*",
       "mcp__neon__*",
       "mcp__resend__*",
       "mcp__upstash__*"
@@ -444,6 +444,21 @@ Credential setup (Doppler) — only needed when the project has a database:
 
   No DOPPLER_TOKEN in ~/.zshrc is needed — local `doppler login` session is sufficient.
   DOPPLER_TOKEN is only required for CI/CD (GitHub Actions).
+
+─────────────────────────────────────────
+CLI login (one-time per machine) — for Vercel and Neon:
+
+  Vercel and Neon MCP servers use OAuth and only connect
+  in The Genesis session. In child projects, use CLI instead:
+
+    vercel login       (opens browser, stores session locally)
+    neonctl auth       (opens browser, stores session locally)
+
+  After login, all vercel/neonctl commands work without
+  tokens or env vars. This is a one-time setup.
+
+  All other MCP servers (GitHub, Cloudflare, Resend, Upstash)
+  use tokens and work in every project automatically.
 
 ─────────────────────────────────────────
 Platform deployment file included: {deployment-platform-filename}
