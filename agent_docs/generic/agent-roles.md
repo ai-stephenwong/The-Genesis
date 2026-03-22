@@ -1,4 +1,4 @@
-<!-- last-reviewed: 2026-03-21 | reviewed-by: The Genesis (tribute omnichat-v4 R1) | next-review: 2026-09-21 -->
+<!-- last-reviewed: 2026-03-22 | reviewed-by: The Genesis (tribute omnichat-v1 R3) | next-review: 2026-09-22 -->
 
 # Agent Roles & Pipeline Contracts (Company Standard)
 
@@ -240,6 +240,9 @@ ARTIFACTS: agent_docs/project/architecture.md, agent_docs/project/er-diagram.md,
 - [ ] Deployment config framework field matches the build tool in `package.json` — e.g. `vercel.json "framework"` must be `"vite"` for Vite projects, not `"nextjs"` or any other value
 - [ ] `api-spec.yaml` passes YAML validation — no parse errors (run `npx js-yaml api-spec.yaml` or equivalent; unquoted colon-space in strings is a common parse error)
 - [ ] All runtime bindings referenced in application code (e.g. `c.env.BINDING_NAME`, `env.BINDING_NAME`, `process.env.BINDING`) match the binding declarations in the deployment manifest (`wrangler.toml`, `serverless.yml`, `fly.toml`, etc.) exactly — no name mismatches, no bindings referenced in code but absent from the manifest
+- [ ] All `import.meta.env.VITE_*` (Vite) or `process.env.NEXT_PUBLIC_*` (Next.js) env var names used in source match the exact names documented in `agent_docs/project/deployment.md` — a name mismatch causes a silent build-time miss with no error
+- [ ] No required env var uses a silent hardcoded fallback (e.g. `import.meta.env.VITE_API_BASE_URL || 'https://...'`) — if the env var is required, the code must throw or fail at startup when it is absent; never silently fall through to a wrong host
+- [ ] Seed data (or equivalent fixture data) covers the complete set of entity identifiers (slugs, IDs, keys) the frontend will request via API at first load — verify by listing all data-fetching calls (e.g. `usePageContent(slug)`, `getPage(slug)`) from the frontend route files and confirming each has a matching seed entry; seed field values must comply with DB column constraints (varchar lengths, enum values, NOT NULL)
 ## Test Coverage
 ## Known Limitations
 ## Review Notes for Code Reviewer
@@ -279,7 +282,7 @@ ARTIFACTS: src/, artifacts/development/feature-YYYYMMDD-HHmm.md
 - Verify adherence to architecture, API conventions, and coding standards
 - **Verify implementation conforms to `api-spec.yaml`** — check endpoint paths, request/response shapes, enum values, and error formats match the spec exactly
 - **Check enum values in frontend and backend use identical casing** — flag any mismatch as Critical
-- **Check cross-service env vars are documented** in `agent_docs/project/deployment.md` (CORS origins, API base URLs)
+- **Check cross-service env vars are documented and name-matched** — for every `import.meta.env.VITE_*` or `process.env.NEXT_PUBLIC_*` reference in the frontend, verify: (1) the exact name appears in `agent_docs/project/deployment.md`; (2) no silent hardcoded fallback exists for a required env var (e.g. `VITE_API_BASE_URL || 'https://...'` is a Major finding — a missing required env var must fail loudly, not fall through to a wrong host). Also verify CORS origins and API base URLs are documented with the correct deployed values.
 - **Verify service/controller field names match both `api-spec.yaml` AND the data model** — for every ORM/database query, check that field names used in select, filter, create, and update clauses exist in the data model (e.g. Prisma schema, SQLAlchemy model, JPA entity); flag any non-existent field as Critical
 - **Verify client-side data types match `api-spec.yaml`** — for any hand-written interface, DTO, or type definition (TypeScript interface, Java POJO, Python dataclass, etc.) representing an API response, check every property name against the corresponding spec schema; flag any mismatch as Critical; if using a generated client (`@hey-api/openapi-ts` or equivalent), verify it is regenerated from the latest spec
 - **Frontend route/link coverage** — for every navigation link (`<Link>`, `router.push()`, `redirect()`, `<a href>`, or framework equivalent) in the frontend, verify a corresponding route/view file exists; flag any link whose destination route is not built as Critical
@@ -570,12 +573,15 @@ ARTIFACTS: artifacts/ux-review/review-YYYYMMDD-HHmm.md
   - [ ] Cron trigger day-of-week uses three-letter abbreviation (`SUN`/`MON`/... not `0`/`1`/...)
   - [ ] Worker exports all declared handlers via `export default { fetch, scheduled, queue }` — named exports (`export const queue = ...`) are not recognised for queue consumers or scheduled handlers
   - [ ] `wrangler deploy --dry-run` passes with no errors in all configured environments
+  - [ ] `CORS_ALLOWED_ORIGINS` (or `ALLOWED_ORIGINS`) in `wrangler.toml` or Worker secrets includes every documented frontend URL from `agent_docs/project/deployment.md` — a mismatch blocks all cross-origin API calls silently
 - **Cross-service URL wiring (first deployment, Vercel + Cloudflare):** On first deployment, the frontend and API have a mutual URL dependency and must be deployed in order — not in parallel. Follow the sequence in `deployment-vercel-cloudflare.md` §4: (1) deploy Workers first and capture the API URL; (2) set the API URL as a Vercel env var (`VITE_API_BASE_URL` / `NEXT_PUBLIC_API_URL`) for the target environment; (3) update the Worker's CORS `allowed_origins` with the Vercel frontend URL; (4) redeploy Workers with updated CORS; (5) deploy frontend. Document the final URLs in `agent_docs/project/deployment.md`. This sequence must be repeated when switching from `*.workers.dev` / `*.vercel.app` preview URLs to custom domains.
 - **Cloudflare Workers: include a cloud resource pre-creation manifest** in the devops setup artifact listing every resource that must exist *before* first deployment, the command to create it, and its provisioned status. Queues, KV namespaces, Hyperdrive configs, and R2 buckets are **not** auto-created by `wrangler deploy` — they must be pre-provisioned:
 
   | Resource | Type | Environment | Create command | Created? |
   |---|---|---|---|---|
   | (example) media-variants-dev | Cloudflare Queue | dev | `wrangler queues create media-variants-dev` | [ ] |
+
+- **Database Migration Pipeline Step (mandatory for all SQL database projects):** The CI/CD pipeline must include a migration step that runs before the application deploys to any environment: (1) run the ORM migration tool (`drizzle-kit migrate`, `prisma migrate deploy`, `alembic upgrade head`, etc.) against the environment's database; (2) verify exit code 0 — non-zero is a hard blocker, deploy does not proceed; (3) verify schema is applied with a table-existence or health check query. Before first deployment to any environment, also validate that generated SQL parses and applies cleanly on a scratch/test database — this catches ORM codegen bugs (e.g. missing `DEFAULT` value on array columns) before they reach a real environment. The Pre-Deployment Checklist item "migrations run" must be enforced by the CI/CD pipeline, not left as a manual checkbox.
 
 **Must NOT:**
 - Write application business logic or modify `src/`
