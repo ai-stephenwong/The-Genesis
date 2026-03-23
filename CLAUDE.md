@@ -61,3 +61,4 @@ Platform-specific deployment standards:
 | `agent_docs/generic/deployment-alicloud.md` | Alibaba Cloud best practices |
 | `agent_docs/generic/deployment-onpremise.md` | On-premise best practices |
 | `agent_docs/generic/deployment-vercel-cloudflare.md` | Vercel + Cloudflare best practices |
+| `agent_docs/generic/deployment-vercel-railway.md` | Vercel + Railway best practices |

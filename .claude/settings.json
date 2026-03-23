@@ -32,6 +32,7 @@
       "Bash(doppler:*)",
       "Bash(/Users/stephen.wong/homebrew/bin/doppler:*)",
       "Bash(/Users/stephen.wong/homebrew/bin/brew:*)",
+      "Bash(/Users/stephen.wong/.npm-global/bin/railway:*)",
       "Bash(bash:*)",
       "Bash(which:*)",
       "Bash(sw_vers)",
@@ -55,10 +56,13 @@
       "WebFetch(domain:docs.anthropic.com)",
       "mcp__github__*",
       "mcp__vercel__*",
-      "mcp__cloudflare__*",
+      "mcp__cloudflare-api__*",
       "mcp__neon__*",
       "mcp__resend__*",
-      "mcp__upstash__*"
+      "mcp__upstash__*",
+      "mcp__railway__*",
+      "mcp__sentry__*",
+      "WebFetch(domain:www.npmjs.com)"
     ],
     "deny": [],
     "additionalDirectories": [

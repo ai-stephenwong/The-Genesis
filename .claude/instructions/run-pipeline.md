@@ -111,7 +111,7 @@ When a review stage (code-reviewer, tester, security-auditor, compliance-officer
 2. Immediately spawn the `developer` agent to fix all identified issues
 3. After fixes are applied, re-run the stage that found the issues to verify the fixes
 4. If the re-run passes → continue to the next stage
-5. If the re-run still fails after **2 fix attempts** → STOP and escalate to the user with a summary of what was tried
+5. If the re-run still fails after **5 fix attempts** → STOP and escalate to the user with a summary of what was tried
 
 This applies to any issue that can be resolved by changing code, config, or dependencies. The orchestrator must not ask "Want me to fix these?" — it must just fix them.
 

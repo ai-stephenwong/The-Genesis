@@ -37,7 +37,7 @@ For fields with options listed, pick one of the listed values exactly.
 | Project name |                                                                    |
 | Folder name  | (kebab-case, e.g. my-project — this becomes the folder name)       |
 | Description  | (one sentence: what it does and who it's for)                      |
-| Cloud        | AWS / GCP / Alibaba Cloud / On-Premise / Vercel+Cloudflare         |
+| Cloud        | AWS / GCP / Alibaba Cloud / On-Premise / Vercel+Cloudflare / Vercel+Railway |
 | Environments | dev / staging / production (or customise)                          |
 | Backend      | Node.js+TypeScript+Express / Node.js+TypeScript+Fastify / Java+SpringBoot / Python+FastAPI |
 | Database     | PostgreSQL / MySQL / MongoDB / Other: ___                          |
@@ -61,7 +61,7 @@ Before doing anything else, validate every field against these rules:
 | Project name | Not empty |
 | Folder name | Not empty; must be kebab-case (lowercase, hyphens only, no spaces or special characters) |
 | Description | Not empty; must be at least one meaningful sentence |
-| Cloud | Must be one of: `AWS`, `GCP`, `Alibaba Cloud`, `On-Premise`, `Vercel+Cloudflare` |
+| Cloud | Must be one of: `AWS`, `GCP`, `Alibaba Cloud`, `On-Premise`, `Vercel+Cloudflare`, `Vercel+Railway` |
 | Environments | Not empty; must contain at least one environment name |
 | Backend | Must be one of the listed options or a clearly specified "Other" |
 | Database | Must be one of the listed options or a clearly specified "Other" |
@@ -130,7 +130,8 @@ Ask in this exact order:
    - 3) Alibaba Cloud
    - 4) On-Premise
    - 5) Vercel (frontend) + Cloudflare (API/edge)
-   - 6) Multiple (specify which)
+   - 6) Vercel (frontend) + Railway (API backend)
+   - 7) Multiple (specify which)
 5. Which environments are needed? (default: dev / staging / production — press Enter to accept)
 6. Backend language and framework?
    - 1) Java + Spring Boot
@@ -207,7 +208,20 @@ Show a full summary including the confirmed folder name and ask: **"Create proje
 │   │   ├── deployment-standards.md
 │   │   ├── deployment-{platform}.md   ← only the selected platform(s)
 │   │   ├── git-workflow.md
-│   │   └── agent-roles.md             ← agent pipeline contracts
+│   │   ├── agent-roles.md             ← agent pipeline contracts (shared header)
+│   │   └── agents/                    ← individual agent role definitions (copy ALL)
+│   │       ├── requirements-analyst.md
+│   │       ├── uiux-reviewer.md
+│   │       ├── solution-architect.md
+│   │       ├── developer.md
+│   │       ├── code-reviewer.md
+│   │       ├── tester.md
+│   │       ├── security-auditor.md
+│   │       ├── compliance-officer.md
+│   │       ├── devops-engineer.md
+│   │       ├── deploy-environment.md
+│   │       ├── deploy-production.md
+│   │       └── retrospective-analyst.md
 │   └── project/                       ← copy from templates/, fill all placeholders
 │       ├── stack.md
 │       ├── architecture.md
@@ -319,12 +333,14 @@ Generate `.claude/settings.json` with this structure (replace `{full-project-pat
       "mcp__cloudflare-api__*",
       "mcp__neon__*",
       "mcp__resend__*",
-      "mcp__upstash__*"
+      "mcp__upstash__*",
+      "mcp__railway__*",
+      "mcp__sentry__*",
+      "Read(/Users/stephen.wong/Projects-AI-Agents/-The Genesis/agent_docs/generic/*)",
+      "Write(/Users/stephen.wong/Projects-AI-Agents/-The Genesis/tributes/inbox/*)"
     ],
     "deny": [],
-    "additionalDirectories": [
-      "/Users/stephen.wong/Projects-AI-Agents/-The Genesis"
-    ]
+    "additionalDirectories": []
   },
   "hooks": {
     "PreToolUse": [
@@ -520,7 +536,7 @@ At the start of every conversation, read and follow `.claude/instructions/sessio
 ## Client
 
 - **Client:** [Client Name]
-- **Cloud:** [AWS / GCP / Alicloud / On-Premise / Vercel + Cloudflare]
+- **Cloud:** [AWS / GCP / Alicloud / On-Premise / Vercel + Cloudflare / Vercel + Railway]
 - **Environments:** dev / staging / production
 
 ## Tech Stack
@@ -534,8 +550,14 @@ At the start of every conversation, read and follow `.claude/instructions/sessio
 
 - **Framework:** The Genesis
 - **Location:** `[Genesis Path]`
-- **Standards source:** All `agent_docs/generic/` files in this project are inherited from The Genesis — do not edit them directly; raise improvements via the retrospective process in The Genesis
-- **Propagating improvements:** When the `retrospective-analyst` identifies SDLC improvements in this project, they are applied to The Genesis first, then propagated to all active sibling projects
+- **Standards source:** All `agent_docs/generic/` files in this project are inherited from The Genesis — **never directly edit Genesis files from this project**
+- **Proposing improvements (tribute process):** When the `retrospective-analyst` identifies SDLC improvements, submit them as a **tribute** to The Genesis:
+  1. Create a tribute folder: `{genesis-path}/tributes/inbox/tribute-{project-name}-{YYYYMMDD}-{HHMM}/`
+  2. Write a `TRIBUTE.md` cover document describing the problem, root cause, and proposed changes
+  3. Place proposed modified files in a `proposed/` subfolder within the tribute folder
+  4. **Do not modify this project's own copy** of `agent_docs/generic/` files — wait for The Genesis to process and propagate
+  5. The Genesis maintainer reviews, approves/rejects, applies changes, and propagates to all active projects
+- **What is NOT permitted:** Directly editing, writing to, or deleting any file inside The Genesis project folder except `tributes/inbox/`. This includes `agent_docs/generic/`, `.claude/`, and all other Genesis directories. See `agent-roles.md` Orchestration Rule #8
 
 ## Documentation
 
