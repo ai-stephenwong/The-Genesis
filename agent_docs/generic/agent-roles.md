@@ -63,6 +63,8 @@ When any reviewing agent (uiux-reviewer, code-reviewer, security-auditor, compli
 
 A PASS WITH CONDITIONS verdict with unresolved Critical findings **must not** allow downstream pipeline stages to proceed. The gate artifact is the auditable record that enforcement occurred.
 
+4. When auto-remediation is triggered (Autopilot mode), follow the **Remediation Loopback Protocol** in `run-pipeline.md` Step 4 to ensure fixes are validated by all intermediate review stages before returning to the stage that found the issue.
+
 ---
 
 ## Universal Retrospective Obligation

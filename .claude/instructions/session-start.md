@@ -73,7 +73,17 @@ Wait for confirmation before continuing.
 
 Store the chosen mode for the rest of this session:
 
-- **1 — Autopilot**: At every pipeline gate, apply The Genesis standards as decision criteria, decide automatically (approve / reject / resolve), create a `snapshot/{stage}-{HHmm}` git tag immediately after deciding, log the decision with rationale. Do not pause for user input at any gate. Every intermediate deliverable that normally requires owner approval (requirements, architecture, API spec, code review, security, compliance, production deploy) is approved automatically on their behalf — each approval is recorded in the Decision Log so the owner can review every gate and roll back any they disagree with on return. For any unknown value (URLs, connection strings, API keys, credentials), use a `PLACEHOLDER_<DESCRIPTION>` token — never block to ask. Track every placeholder used. On completion, deliver the Configuration Handover block (listing all placeholders with file, token, and description) followed by the Decision Log format from `agent_docs/generic/pilot-spec.md`.
+- **1 — Autopilot**: The agent runs the entire pipeline unattended. **Core principle: if the agent already has a recommendation or sufficient information to decide, execute the recommendation immediately — never pause to ask.**
+
+  **Decision-making:** At every pipeline gate, apply The Genesis standards as decision criteria, decide automatically (approve / reject / resolve), create a `snapshot/{stage}-{HHmm}` git tag immediately after deciding. Do not pause for user input at any gate. Every intermediate deliverable that normally requires owner approval (requirements, architecture, API spec, code review, security, compliance) is approved automatically on their behalf.
+
+  **Decision Log:** All decisions are recorded in a persistent file: `artifacts/decision-log-YYYYMMDD-HHmm.md` (created at pipeline start, appended after every decision). See `run-pipeline.md` Step 5 for the full format.
+
+  **Stage reporting:** After each stage completes, display a brief stage report (decisions made, key decisions, artifacts, next stage). The project owner can request an overall report at any time ("show report", "status").
+
+  **Placeholders:** For any unknown value (URLs, connection strings, API keys, credentials), use a `PLACEHOLDER_<DESCRIPTION>` token — never block to ask. Track every placeholder used.
+
+  **On completion:** Automatically display the Pipeline Completion Report: stages completed, total decisions, auto-remediations, accepted risks, unresolved placeholders (Configuration Handover), and the path to the Decision Log file.
 - **2 — Manual**: Standard behaviour — pause and wait for user approval at every gate.
 
 Then continue to Step 1.
@@ -161,11 +171,25 @@ When the user asks about pipeline status at ANY point during a session (not just
 
 ## Step 2 — First-Session Detection
 
-If ALL pipeline stages are "Not started", this is the first session. Display:
+If ALL pipeline stages are "Not started", this is the first session.
+
+### Autopilot mode — first session
+
+If Autopilot is active, **do not ask setup questions**. Auto-resolve everything:
+
+1. **Stack details** — read `agent_docs/project/stack.md`. If placeholders remain, choose the most common/sensible defaults based on the project's tech stack, fill them in, and log each decision.
+2. **GitHub repos** — read `agent_docs/project/git-workflow.md`. If repo URLs are already filled in, proceed. If not, use `PLACEHOLDER_REPO_URL` tokens.
+3. **Requirements files** — check `agent_docs/project/specs/requirements-include-files/`. If real files exist, register any unregistered ones automatically. If no real files exist, log it as a blocker and stop.
+4. **Git init** — if the project folder is not yet a git repo, initialise it automatically: `git init && git add . && git commit -m "chore: initialise project scaffold"`.
+5. **Immediately execute `run pipeline`** — do not display the "Ready to start" prompt, do not wait for the user to say "run pipeline". Autopilot must start the pipeline automatically as soon as setup is complete. Read and follow `.claude/instructions/run-pipeline.md` directly from here.
+
+### Manual mode — first session
+
+Display:
 
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  👋 First session — let's set this project up.
+  First session — let's set this project up.
   I'll ask you a few questions and fill everything in.
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ```
@@ -194,7 +218,7 @@ Then guide the user through setup **one question at a time** (never ask multiple
 
 5. **Ready to start** — display:
    ```
-   ✅ Setup complete. When you're ready to begin development, say:
+   Setup complete. When you're ready to begin development, say:
       "run agent requirements-analyst"   ← start here if you have requirements
       "run pipeline"                     ← run all agents in sequence
    ```
@@ -207,7 +231,11 @@ After first-session onboarding: skip Steps 3 and 4 below. Otherwise proceed.
 2. For each file registered, read from `agent_docs/project/specs/requirements-include-files/`
 3. Extract its `<!-- last-updated: YYYY-MM-DD -->` tag
 4. Compare against the `Last Reviewed` date in the registry
-5. If any file is newer, alert before doing anything else:
+5. If any file is newer:
+
+**Autopilot mode:** Log the drift in the Decision Log, treat the updated files as the current requirements (auto-acknowledge), update `Last Reviewed` to today, and proceed. Do NOT ask.
+
+**Manual mode:** Alert before doing anything else:
 
 ```
 ⚠️ Requirements have been updated since they were last reviewed:
@@ -224,7 +252,11 @@ Would you like to review the changes before we continue? [Y/n]
 ## Step 4 — API Spec Change Request Review
 
 1. Check if `artifacts/development/api-spec-change-requests-*.md` exists and contains items with `Status: PENDING APPROVAL`
-2. If pending requests exist, alert before any other work:
+2. If pending requests exist:
+
+**Autopilot mode:** Evaluate each change request against the requirements and architecture. If the change is consistent with requirements and the developer's rationale is sound, **auto-approve** — update `api-spec.yaml`, set `Status: APPROVED`, and log the decision. If the change contradicts requirements or introduces risk, **auto-reject** with reason and log the decision. Do NOT ask.
+
+**Manual mode:** Alert before any other work:
 
 ```
 ⚠️ API spec change requests are pending your approval:

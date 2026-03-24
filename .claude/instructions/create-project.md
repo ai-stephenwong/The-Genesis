@@ -336,7 +336,6 @@ Generate `.claude/settings.json` with this structure (replace `{full-project-pat
       "mcp__upstash__*",
       "mcp__railway__*",
       "mcp__sentry__*",
-      "Read(/Users/stephen.wong/Projects-AI-Agents/-The Genesis/agent_docs/generic/*)",
       "Write(/Users/stephen.wong/Projects-AI-Agents/-The Genesis/tributes/inbox/*)"
     ],
     "deny": [],
@@ -349,7 +348,7 @@ Generate `.claude/settings.json` with this structure (replace `{full-project-pat
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/.claude/hooks/check-credential-inspection.py\""
+            "command": "python3 \"{full-project-path}/.claude/hooks/check-credential-inspection.py\""
           }
         ]
       }
