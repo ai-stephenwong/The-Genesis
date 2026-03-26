@@ -111,9 +111,14 @@ Each agent's full role definition, responsibilities, I/O contracts, and output f
 | 7 | `security-auditor` | `agents/security-auditor.md` |
 | 8 | `compliance-officer` | `agents/compliance-officer.md` |
 | 9 | `devops-engineer` | `agents/devops-engineer.md` |
-| 10 | `deploy-environment` | `agents/deploy-environment.md` |
-| 11 | `deploy-production` | `agents/deploy-production.md` |
-| 12 | `retrospective-analyst` | `agents/retrospective-analyst.md` |
+| 10 | `retrospective-analyst` | `agents/retrospective-analyst.md` |
+
+**Pipeline stages** (executed by `devops-engineer` or `orchestrator`, not separate roles):
+
+| # | Stage | File |
+|---|---|---|
+| S1 | `deploy-environment` | `stages/deploy-environment.md` |
+| S2 | `deploy-production` | `stages/deploy-production.md` |
 
 When invoking an agent as a sub-agent, the orchestrator must provide:
 1. This file (`agent-roles.md`) — for universal rules and pipeline context

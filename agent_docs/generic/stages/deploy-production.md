@@ -1,7 +1,8 @@
-<!-- part-of: agent-roles.md | agent: deploy-production -->
+<!-- part-of: agent-roles.md | stage: deploy-production -->
 
-> This file defines the responsibilities for a single pipeline agent.
-> **Before reading this file**, read `agent-roles.md` for universal rules, pipeline overview, and orchestration rules that apply to ALL agents.
+> This file defines a **pipeline stage**, not an agent role.
+> It is executed by the `devops-engineer` or `orchestrator` — not by a separate agent.
+> **Before reading this file**, read `agent-roles.md` for universal rules and pipeline overview.
 
 ---
 

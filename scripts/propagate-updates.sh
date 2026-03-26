@@ -220,6 +220,36 @@ for DEST in "${TARGETS[@]}"; do
   echo ""
 
   # ---------------------------------------------------------------------------
+  # 1c. OVERWRITE — pipeline stage definitions (stages/*.md)
+  # ---------------------------------------------------------------------------
+  echo -e "  ${BOLD}[1c] Updating pipeline stage definitions...${NC}"
+
+  STAGES_SRC="$GENERIC_SRC/stages"
+  STAGES_DEST="$GENERIC_DEST/stages"
+  mkdir -p "$STAGES_DEST"
+
+  for src_file in "$STAGES_SRC"/*.md; do
+    [[ ! -f "$src_file" ]] && continue
+    filename="$(basename "$src_file")"
+    dest_file="$STAGES_DEST/$filename"
+
+    if [[ -f "$dest_file" ]]; then
+      if ! diff -q "$src_file" "$dest_file" > /dev/null 2>&1; then
+        cp "$src_file" "$dest_file"
+        echo -e "    ${GREEN}↺  Updated:${NC} agent_docs/generic/stages/$filename"
+        ((OVERWRITTEN++))
+      else
+        echo -e "    —  No change: agent_docs/generic/stages/$filename"
+      fi
+    else
+      cp "$src_file" "$dest_file"
+      echo -e "    ${GREEN}+  Added:${NC} agent_docs/generic/stages/$filename"
+      ((ADDED++))
+    fi
+  done
+  echo ""
+
+  # ---------------------------------------------------------------------------
   # 2. PLATFORM — copy only applicable deployment files, remove others
   # ---------------------------------------------------------------------------
   echo -e "  ${BOLD}[2] Syncing platform-specific deployment files...${NC}"
