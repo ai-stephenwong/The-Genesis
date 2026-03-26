@@ -271,6 +271,7 @@ Show a full summary including the confirmed folder name and ask: **"Create proje
     ├── devops/
     ├── retrospective/
     ├── compliance/
+    ├── runs/                          ← pipeline run records (pipeline-run.json per run)
     └── tributes/                      ← tribute packages for The Genesis (one folder per round)
 ```
 

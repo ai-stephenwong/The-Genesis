@@ -1,0 +1,176 @@
+{
+  "run_id": "run-YYYYMMDD-HHmm",
+  "project": "",
+  "started": "",
+  "completed": "",
+  "mode": "autopilot | co-pilot | manual",
+  "genesis_version": "",
+  "stages": {
+    "requirements-analyst": {
+      "status": "not-started | running | complete | failed | skipped",
+      "started": null,
+      "completed": null,
+      "process_time_seconds": null,
+      "remediation_rounds": 0,
+      "validation": {
+        "script": null,
+        "checks_total": 0,
+        "checks_passed": 0,
+        "checks_failed": 0,
+        "failures": []
+      },
+      "artifact": null
+    },
+    "solution-architect": {
+      "status": "not-started",
+      "started": null,
+      "completed": null,
+      "process_time_seconds": null,
+      "remediation_rounds": 0,
+      "validation": {
+        "script": "post-architect",
+        "checks_total": 0,
+        "checks_passed": 0,
+        "checks_failed": 0,
+        "failures": []
+      },
+      "artifact": null
+    },
+    "developer": {
+      "status": "not-started",
+      "started": null,
+      "completed": null,
+      "process_time_seconds": null,
+      "remediation_rounds": 0,
+      "validation": {
+        "script": "post-developer",
+        "checks_total": 0,
+        "checks_passed": 0,
+        "checks_failed": 0,
+        "failures": []
+      },
+      "artifact": null
+    },
+    "devops-engineer": {
+      "status": "not-started",
+      "started": null,
+      "completed": null,
+      "process_time_seconds": null,
+      "remediation_rounds": 0,
+      "validation": {
+        "script": "post-devops",
+        "checks_total": 0,
+        "checks_passed": 0,
+        "checks_failed": 0,
+        "failures": []
+      },
+      "artifact": null
+    },
+    "code-reviewer": {
+      "status": "not-started",
+      "started": null,
+      "completed": null,
+      "process_time_seconds": null,
+      "remediation_rounds": 0,
+      "validation": {
+        "script": "pre-review",
+        "checks_total": 0,
+        "checks_passed": 0,
+        "checks_failed": 0,
+        "failures": []
+      },
+      "artifact": null
+    },
+    "tester": {
+      "status": "not-started",
+      "started": null,
+      "completed": null,
+      "process_time_seconds": null,
+      "remediation_rounds": 0,
+      "validation": {
+        "script": null,
+        "checks_total": 0,
+        "checks_passed": 0,
+        "checks_failed": 0,
+        "failures": []
+      },
+      "artifact": null
+    },
+    "security-auditor": {
+      "status": "not-started",
+      "started": null,
+      "completed": null,
+      "process_time_seconds": null,
+      "remediation_rounds": 0,
+      "validation": {
+        "script": null,
+        "checks_total": 0,
+        "checks_passed": 0,
+        "checks_failed": 0,
+        "failures": []
+      },
+      "artifact": null
+    },
+    "compliance-officer": {
+      "status": "not-started",
+      "started": null,
+      "completed": null,
+      "process_time_seconds": null,
+      "remediation_rounds": 0,
+      "validation": {
+        "script": "pre-compliance",
+        "checks_total": 0,
+        "checks_passed": 0,
+        "checks_failed": 0,
+        "failures": []
+      },
+      "artifact": null
+    },
+    "deploy-environment": {
+      "status": "not-started",
+      "started": null,
+      "completed": null,
+      "process_time_seconds": null,
+      "remediation_rounds": 0,
+      "validation": {
+        "script": null,
+        "checks_total": 0,
+        "checks_passed": 0,
+        "checks_failed": 0,
+        "failures": []
+      },
+      "artifact": null
+    },
+    "deploy-production": {
+      "status": "not-started",
+      "started": null,
+      "completed": null,
+      "process_time_seconds": null,
+      "remediation_rounds": 0,
+      "validation": {
+        "script": null,
+        "checks_total": 0,
+        "checks_passed": 0,
+        "checks_failed": 0,
+        "failures": []
+      },
+      "artifact": null
+    }
+  },
+  "totals": {
+    "process_time_seconds": 0,
+    "total_remediation_rounds": 0,
+    "validation_checks_total": 0,
+    "validation_checks_passed": 0,
+    "validation_checks_failed": 0,
+    "stages_completed": 0,
+    "stages_failed": 0
+  },
+  "retrospective": {
+    "triggered": false,
+    "bugs_found": 0,
+    "overall_score": null,
+    "tribute_produced": false,
+    "tribute_path": null
+  }
+}

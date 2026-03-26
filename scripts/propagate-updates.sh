@@ -366,8 +366,50 @@ for DEST in "${TARGETS[@]}"; do
     done
   fi
 
+  # pipeline-run.json template (ADD ONLY)
+  RUN_TEMPLATE_SRC="$SRC/agent_docs/templates/pipeline-run.json"
+  RUN_TEMPLATE_DEST="$DEST/agent_docs/templates/pipeline-run.json"
+  if [[ -f "$RUN_TEMPLATE_SRC" ]]; then
+    mkdir -p "$DEST/agent_docs/templates"
+    if [[ ! -f "$RUN_TEMPLATE_DEST" ]]; then
+      cp "$RUN_TEMPLATE_SRC" "$RUN_TEMPLATE_DEST"
+      echo -e "    ${GREEN}+  Added:${NC} agent_docs/templates/pipeline-run.json"
+      ((ADDED++))
+    else
+      if ! diff -q "$RUN_TEMPLATE_SRC" "$RUN_TEMPLATE_DEST" > /dev/null 2>&1; then
+        cp "$RUN_TEMPLATE_SRC" "$RUN_TEMPLATE_DEST"
+        echo -e "    ${GREEN}↺  Updated:${NC} agent_docs/templates/pipeline-run.json"
+        ((OVERWRITTEN++))
+      else
+        echo -e "    —  No change: agent_docs/templates/pipeline-run.json"
+      fi
+    fi
+  fi
+
+  # convergence-report.sh
+  CONV_SRC="$SRC/scripts/convergence-report.sh"
+  CONV_DEST="$DEST/scripts/convergence-report.sh"
+  if [[ -f "$CONV_SRC" ]]; then
+    mkdir -p "$DEST/scripts"
+    if [[ ! -f "$CONV_DEST" ]]; then
+      cp "$CONV_SRC" "$CONV_DEST"
+      chmod +x "$CONV_DEST"
+      echo -e "    ${GREEN}+  Added:${NC} scripts/convergence-report.sh"
+      ((ADDED++))
+    else
+      if ! diff -q "$CONV_SRC" "$CONV_DEST" > /dev/null 2>&1; then
+        cp "$CONV_SRC" "$CONV_DEST"
+        chmod +x "$CONV_DEST"
+        echo -e "    ${GREEN}↺  Updated:${NC} scripts/convergence-report.sh"
+        ((OVERWRITTEN++))
+      else
+        echo -e "    —  No change: scripts/convergence-report.sh"
+      fi
+    fi
+  fi
+
   # artifacts subfolders
-  for artifact_dir in requirements architecture development code-review uiux-review test security devops compliance; do
+  for artifact_dir in requirements architecture development code-review uiux-review test security devops compliance runs; do
     artifact_path="$DEST/artifacts/$artifact_dir"
     if [[ ! -d "$artifact_path" ]]; then
       mkdir -p "$artifact_path"

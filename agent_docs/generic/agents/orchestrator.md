@@ -76,6 +76,7 @@ At the start of every pipeline run, the orchestrator must present the mode selec
 - **Process observation:** Throughout the pipeline run, note any process friction, unclear boundaries, missing standards, or recurring problems. Record these observations for the retrospective tribute to The Genesis
 - **Decision logging:** In Autopilot and Co-pilot modes, maintain the Decision Log (see formats below). Every gate decision must include rationale
 - **Snapshotting (Autopilot):** Create a git tag at every gate immediately after deciding (see Snapshot Convention below)
+- **Run metrics tracking:** At the start of every pipeline run, copy `agent_docs/templates/pipeline-run.json` to `artifacts/runs/run-YYYYMMDD-HHmm.json` and populate `run_id`, `project`, `started`, `mode`, and `genesis_version` (use the latest Genesis commit hash). After each stage completes, update the stage entry with `started`, `completed`, `process_time_seconds`, `remediation_rounds`, validation results, and `artifact` path. After the pipeline finishes, update `completed` and `totals`. If a retrospective is triggered, update the `retrospective` block. This file is the machine-readable record of the run — the retrospective-analyst uses it to measure convergence across runs
 
 ---
 

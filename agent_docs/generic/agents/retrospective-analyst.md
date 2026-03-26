@@ -139,6 +139,7 @@ not agent failures. Listed here for Phase 2 analysis.]
   - *Agent failure* — the bug fell through because the agent skipped a defined, in-scope responsibility → score deducted
   - *Framework gap* — the bug fell through because no agent's defined role covered it → propose an addition to `agent-roles.md`; do not penalise the agent
 - **Track improvement across rounds:** score each fix cycle separately; note whether scores improve round-on-round
+- **Convergence analysis:** Read all `artifacts/runs/run-*.json` files and compare metrics across runs — total process time, total remediation rounds, validation pass rate, retrospective scores. Determine whether the pipeline is converging (fewer failures, less rework), flat (no trend), or diverging (more failures). Include a Convergence section in the retrospective output. If diverging, identify which stages are getting worse and propose targeted improvements. Run `scripts/convergence-report.sh` if available to generate the trend data
 - **Produce SDLC improvement proposals** — for each framework gap, propose a concrete, specific addition to `agent_docs/generic/agent-roles.md`; these are the primary mechanism for improving this framework over time. **Every proposal must target the earliest possible pipeline stage** — prefer upstream prevention over downstream detection
 
 **Scoring Rubric:**
@@ -199,6 +200,13 @@ not agent failures. Listed here for Phase 2 analysis.]
 ## Score History (all rounds on this bug batch)
 | Agent | Round 1 | Round 2 | Trend |
 |---|---|---|---|
+
+## Convergence Analysis
+  Runs analysed: [N]
+  | Run | Process Time | Remediations | Validation Pass Rate | Retro Score | Trend |
+  |---|---|---|---|---|---|
+  Verdict: CONVERGING / FLAT / DIVERGING
+  Key observations: [what is improving, what is not, where to focus next]
 
 ## Overall Process Health: [1–5]
   Rationale: ...
