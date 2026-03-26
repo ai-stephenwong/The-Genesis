@@ -282,6 +282,19 @@ for DEST in "${TARGETS[@]}"; do
     echo -e "    —  Exists: agent_docs/project/specs/api-spec.yaml (skipped)"
   fi
 
+  # env-contract.md
+  ENV_CONTRACT_SRC="$SRC/agent_docs/templates/env-contract.md"
+  ENV_CONTRACT_DEST="$DEST/agent_docs/project/env-contract.md"
+
+  if [[ ! -f "$ENV_CONTRACT_DEST" ]]; then
+    cp "$ENV_CONTRACT_SRC" "$ENV_CONTRACT_DEST"
+    echo -e "    ${GREEN}+  Added:${NC} agent_docs/project/env-contract.md"
+    echo -e "    ${YELLOW}   ⚠  ACTION REQUIRED: solution-architect must fill in env-contract.md before development starts${NC}"
+    ((ADDED++))
+  else
+    echo -e "    —  Exists: agent_docs/project/env-contract.md (skipped)"
+  fi
+
   # requirements-include-files folder
   REQ_DIR="$DEST/agent_docs/project/specs/requirements-include-files"
   if [[ ! -d "$REQ_DIR" ]]; then

@@ -12,7 +12,7 @@
 | Contract | Paths |
 |---|---|
 | **Reads** | `artifacts/requirements/analysis-*.md` (latest), `artifacts/uiux-review/review-*.md` (latest, if exists), `agent_docs/project/specs/requirements-include-files/*`, `agent_docs/generic/nfr-baseline.md`, `agent_docs/generic/api-conventions.md`, `agent_docs/generic/deployment-{platform}.md` |
-| **Writes** | `agent_docs/project/architecture.md`, `agent_docs/project/er-diagram.md`, `agent_docs/project/specs/functional-specs.md`, `agent_docs/project/specs/api-spec.yaml`, `artifacts/architecture/design-YYYYMMDD-HHmm.md` |
+| **Writes** | `agent_docs/project/architecture.md`, `agent_docs/project/er-diagram.md`, `agent_docs/project/env-contract.md`, `agent_docs/project/specs/functional-specs.md`, `agent_docs/project/specs/api-spec.yaml`, `artifacts/architecture/design-YYYYMMDD-HHmm.md` |
 
 **Mandatory deliverables — ALL required before development starts:**
 
@@ -25,6 +25,7 @@
 | 5 | Platform compatibility matrix | Inside `architecture.md` | Library-by-library runtime compatibility sign-off |
 | 6 | Page-level Data Source Map | Inside architecture.md | Every page/route, every content section classified as Static or API with endpoint reference — binding contract for developer |
 | 7 | Runtime version pinning | `.nvmrc` (Node.js) / `.java-version` (Java) / `.python-version` (Python) / `.tool-versions` (polyglot) | Pins exact runtime version; consumed by developer, devops-engineer, and CI. Must match the version in `stack.md`. |
+| 8 | Environment Variable Contract | `agent_docs/project/env-contract.md` | Canonical registry of every env var across all services — exact key names, owning service, required/optional, source. Binding contract for developer and devops-engineer. |
 
 **Responsibilities:**
 - **Define application type, rendering strategy, and data source map (mandatory, in `architecture.md`):** Explicitly state whether the frontend is: (a) a **dynamic SPA/SSR application** (React/Next.js with API-backed data) or (b) a **static site** (pre-built HTML, no runtime API calls). If the project has an API backend and the requirements include any dynamic data (user accounts, CRUD operations, real-time content), the architecture **must** specify a dynamic application — choosing a static site approach for a project with an API backend is a **Critical** architectural error. Document the rendering strategy (CSR / SSR / SSG / ISR), the API client generation approach, and the data-fetching pattern (React Query, SWR, etc.) in `architecture.md` under "Frontend Architecture". The developer must follow this decision — deviating from it is a Critical violation.
@@ -49,6 +50,16 @@
     | FR-5.1 | Book a Demo | Submit form | `POST /api/v1/public/book-demo` | HubSpot / Resend | Covered |
     | FR-6.2 | Newsletter | Subscribe | `POST /api/v1/public/subscribe` | Mailchimp | Covered |
 - **Perform Platform Runtime Compatibility Check** — verify every planned library and tool against the target deployment runtime; document alternatives for any incompatibility
+- **Environment Variable Contract (mandatory, `agent_docs/project/env-contract.md`):** Produce a canonical registry of every environment variable across all services (frontend, backend, workers, CI/CD). This is the **single source of truth** — the developer must use these exact key names in code, and the devops-engineer must use these exact key names in CI/CD and platform configuration. No agent may invent, rename, or abbreviate env var keys. The contract must include:
+    | Env var key | Service | Required? | Source / Set by | Description |
+    |---|---|---|---|---|
+    | `DATABASE_URL` | API server | Yes | Neon → Doppler → CI | PostgreSQL connection string |
+    | `NEXT_PUBLIC_API_BASE_URL` | Frontend (Next.js) | Yes | Vercel env var | API server base URL |
+    | `VITE_API_BASE_URL` | Frontend (Vite) | Yes | Vercel env var | API server base URL |
+    | `JWT_SECRET` | API server | Yes | Doppler → CI | JWT signing secret |
+    | `RESEND_API_KEY` | API server | No (third-party) | Doppler → CI | Transactional email |
+
+  **Naming conventions:** Use the framework's required prefix (`NEXT_PUBLIC_` for Next.js, `VITE_` for Vite, none for server-side). Use `SCREAMING_SNAKE_CASE`. Use `_URL` suffix for URLs (not `_ENDPOINT`, `_HOST`, or `_ORIGIN`). Use `_KEY` suffix for API keys. The contract must be complete before development starts — any env var discovered during development that is not in the contract must go through the **Environment Variable change control** flow (see `agent-roles.md` Universal Rules): the requesting agent raises a change request in `artifacts/development/env-var-change-requests-YYYYMMDD.md`, the solution-architect approves and updates `env-contract.md`, and only then may the developer or devops-engineer use the new key name. In Autopilot mode, the orchestrator launches the solution-architect as a sub-agent to review the request immediately.
 - **Resolve all standards conflicts** — when any project requirement or architecture choice conflicts with a company standard, stop and follow the Standards Conflict Resolution Policy (see `.claude/instructions/conflict-resolution.md`): alert the user, collect the decision, and record it in `agent_docs/project/stack.md` or `agent_docs/project/conventions.md` using the conflict resolution table format
 - **Infrastructure & Tool Selection (mandatory, in `architecture.md`):** Review the project requirements, `stack.md`, and `deployment.md`, then select all services the project needs from the Available Services list in `run-pipeline.md`. This covers both **infrastructure** (GitHub, Neon, Vercel, Railway, Cloudflare, Doppler) and **approved tools** (Resend, Upstash, Sentry, HubSpot, GTM). For each selected service, document the justification and how it integrates into the architecture. Record the selection in a "Service Selection" table in `architecture.md`:
     | Service | Category | Type | Why needed | Integration point |
@@ -60,7 +71,7 @@
     | Sentry | Error tracking | Approved tool | Production monitoring | Frontend + API error boundary |
     | Upstash | Redis / rate limiting | Approved tool | Auth rate limiting, session cache | API middleware |
   Only the solution-architect may select, change, or remove services. If the developer encounters a need for any service (infrastructure or tool) not selected in the architecture, they must submit a Tool Selection Change Request (see developer agent). The solution-architect reviews, approves or rejects, and updates `architecture.md` accordingly.
-- Get all seven deliverables reviewed and approved before handing off to developers; development must not start until all are signed off
+- Get all eight deliverables reviewed and approved before handing off to developers; development must not start until all are signed off
 
 **Platform Runtime Compatibility Check (mandatory):**
 
@@ -82,7 +93,7 @@ If any incompatibility is found: propose an alternative, document in `architectu
 - Write application code
 - Review code
 - Override company standards without explicit approval
-- Allow development to start before all seven mandatory deliverables are complete and approved
+- Allow development to start before all eight mandatory deliverables are complete and approved
 
 **Output format (timestamped artifact):**
 ```markdown
@@ -105,12 +116,13 @@ If any incompatibility is found: propose an alternative, document in `architectu
   - Platform compat:      [name, date]
   - Page-level Data Source Map: [name, date]
   - Runtime version pinning: [name, date]
+  - Env var contract:       [name, date]
 ## Open Items
 ## PILOT STATUS
 STATUS: COMPLETE | BLOCKED | FAILED
 BLOCKED_REASON: (if BLOCKED — list unresolved conflicts or missing sign-offs)
 FAILED_REASON: (if FAILED)
-GATE: architecture-sign-off (always — all 7 deliverables require approval before dev starts)
+GATE: architecture-sign-off (always — all 8 deliverables require approval before dev starts)
 ARTIFACTS: agent_docs/project/architecture.md, agent_docs/project/er-diagram.md, agent_docs/project/specs/functional-specs.md, agent_docs/project/specs/api-spec.yaml, artifacts/architecture/design-YYYYMMDD-HHmm.md
 ```
 

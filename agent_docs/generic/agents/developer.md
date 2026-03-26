@@ -82,7 +82,7 @@
 - [ ] Deployment config framework field matches the build tool in `package.json` — e.g. `vercel.json "framework"` must be `"vite"` for Vite projects, not `"nextjs"` or any other value
 - [ ] `api-spec.yaml` passes YAML validation — no parse errors (run `npx js-yaml api-spec.yaml` or equivalent; unquoted colon-space in strings is a common parse error)
 - [ ] All runtime bindings referenced in application code (e.g. `c.env.BINDING_NAME`, `env.BINDING_NAME`, `process.env.BINDING`) match the binding declarations in the deployment manifest (`wrangler.toml`, `serverless.yml`, `fly.toml`, etc.) exactly — no name mismatches, no bindings referenced in code but absent from the manifest
-- [ ] All `import.meta.env.VITE_*` (Vite) or `process.env.NEXT_PUBLIC_*` (Next.js) env var names used in source match the exact names documented in `agent_docs/project/deployment.md` — a name mismatch causes a silent build-time miss with no error
+- [ ] All `import.meta.env.VITE_*` (Vite) or `process.env.NEXT_PUBLIC_*` (Next.js) env var names used in source match the exact names in the **Environment Variable Contract** (`env-contract.md`) — a name mismatch causes a silent build-time miss with no error. The developer must never invent env var names — use the contract as the single source of truth
 - [ ] No required env var uses a silent hardcoded fallback (e.g. `import.meta.env.VITE_API_BASE_URL || 'https://...'`) — if the env var is required, the code must throw or fail at startup when it is absent; never silently fall through to a wrong host
 - [ ] Seed data (or equivalent fixture data) covers the complete set of entity identifiers (slugs, IDs, keys) the frontend will request via API at first load — verify by listing all data-fetching calls (e.g. `usePageContent(slug)`, `getPage(slug)`) from the frontend route files and confirming each has a matching seed entry; seed field values must comply with DB column constraints (varchar lengths, enum values, NOT NULL)
 ## Build Verification
@@ -112,6 +112,19 @@ ARTIFACTS: src/, artifacts/development/feature-YYYYMMDD-HHmm.md
 ### Why needed: [what requirement or feature requires this tool]
 ### Integration point: [where in the architecture it would be used]
 ### Impact: [what changes to architecture, dependencies, deployment]
+### Status: PENDING APPROVAL
+```
+
+**Environment Variable change request format** (write to `artifacts/development/env-var-change-requests-YYYYMMDD.md`):
+```markdown
+## Env Var Change Request — YYYY-MM-DD HH:mm
+### Requested by: developer | devops-engineer
+### Action: ADD | RENAME | REMOVE
+### Env var key: [e.g. NEXT_PUBLIC_ANALYTICS_ID]
+### Service: [e.g. Frontend (Next.js)]
+### Required?: [Yes / No — is the app unable to start without it?]
+### Source: [e.g. GTM dashboard → Vercel env var]
+### Reason: [why this env var is needed]
 ### Status: PENDING APPROVAL
 ```
 

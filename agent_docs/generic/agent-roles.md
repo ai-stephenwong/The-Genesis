@@ -22,6 +22,15 @@
 > 5. The change request document is updated with: approval date, new spec version, and implementation status
 >
 > Any direct edit to `api-spec.yaml` that bypasses this flow is a **Critical** violation. The spec is a controlled document, not a working file.
+>
+> **Universal Rule — Environment Variable change control `[8.32]`:** The **Environment Variable Contract** (`agent_docs/project/env-contract.md`) is owned exclusively by the `solution-architect`. **No agent may add, rename, or remove env vars without approval.** The only permitted change path is:
+> 1. Any agent identifies a new or changed env var need → raises a **change request** in `artifacts/development/env-var-change-requests-YYYYMMDD.md`
+> 2. The `solution-architect` reviews: approves, rejects, or renames (the architect may choose a different key name that better fits the naming conventions)
+> 3. If approved, the `solution-architect` updates the Environment Variable Contract in `architecture.md`
+> 4. The `developer` uses the approved key name in code; the `devops-engineer` uses the approved key name in CI/CD and platform configuration
+> 5. The change request document is updated with: approval date and implementation status
+>
+> Any env var in code or CI/CD configuration whose key name does not appear in the contract is a **Critical** violation. The contract is the single source of truth — no guessing, no improvising.
 
 ---
 

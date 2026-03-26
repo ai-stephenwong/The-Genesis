@@ -237,6 +237,7 @@ Show a full summary including the confirmed folder name and ask: **"Create proje
 │       ├── git-workflow.md
 │       ├── pipeline.md                ← project-specific agent pipeline config
 │       ├── compliance-checklist.md
+│       ├── env-contract.md            ← env var registry (solution-architect fills this in)
 │       ├── requirements/              ← raw requirements files (one per topic)
 │       │   └── 01-functional.md
 │       └── specs/
