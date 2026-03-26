@@ -309,6 +309,33 @@ for DEST in "${TARGETS[@]}"; do
     fi
   fi
 
+  # scripts/validate/
+  VALIDATE_SRC="$SRC/scripts/validate"
+  VALIDATE_DEST="$DEST/scripts/validate"
+  if [[ -d "$VALIDATE_SRC" ]]; then
+    mkdir -p "$VALIDATE_DEST/checks"
+    for src_file in "$VALIDATE_SRC"/*.sh "$VALIDATE_SRC"/checks/*.sh; do
+      [[ ! -f "$src_file" ]] && continue
+      rel_path="${src_file#"$VALIDATE_SRC/"}"
+      dest_file="$VALIDATE_DEST/$rel_path"
+      if [[ -f "$dest_file" ]]; then
+        if ! diff -q "$src_file" "$dest_file" > /dev/null 2>&1; then
+          cp "$src_file" "$dest_file"
+          chmod +x "$dest_file"
+          echo -e "    ${GREEN}↺  Updated:${NC} scripts/validate/$rel_path"
+          ((OVERWRITTEN++))
+        else
+          echo -e "    —  No change: scripts/validate/$rel_path"
+        fi
+      else
+        cp "$src_file" "$dest_file"
+        chmod +x "$dest_file"
+        echo -e "    ${GREEN}+  Added:${NC} scripts/validate/$rel_path"
+        ((ADDED++))
+      fi
+    done
+  fi
+
   # artifacts subfolders
   for artifact_dir in requirements architecture development code-review uiux-review test security devops compliance; do
     artifact_path="$DEST/artifacts/$artifact_dir"

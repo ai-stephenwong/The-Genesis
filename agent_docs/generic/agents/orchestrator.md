@@ -65,6 +65,7 @@ At the start of every pipeline run, the orchestrator must present the mode selec
 - **Sub-agent invocation:** When invoking a sub-agent, always provide: (1) `agent-roles.md` for universal rules, (2) the agent's individual role file, (3) all input artifacts listed in the agent's I/O contract
 - **Lightweight input validation:** Before invoking a sub-agent, verify that the required input artifacts exist and are structurally complete (file exists, expected sections present, PILOT STATUS is COMPLETE). Do not perform the detailed review that the receiving agent is responsible for
 - **Lightweight output validation:** After a sub-agent completes, verify that the output artifact exists, contains the expected sections, and has a valid PILOT STATUS block. If STATUS is BLOCKED or FAILED, act on it — do not silently continue
+- **Mechanical validation:** After each stage completes, run the validation script for that stage: `scripts/validate/run-stage-checks.sh <stage> <project-root> [<src-dir>]`. Stages: `post-architect`, `post-developer`, `post-devops`, `pre-review`, `pre-compliance`. If any check fails, route the failure to the responsible agent for remediation before proceeding. These scripts are the primary verification mechanism — they catch issues deterministically that agents cannot reliably self-check
 - **Gate enforcement:** At every pipeline gate, apply the decision rules for the active operating mode (see Operating Modes and Pipeline Gates below)
 - **Remediation routing:** When a reviewing agent reports findings that require fixes, route the remediation to the correct agent (usually `developer`) with clear instructions on what to fix. Track remediation attempts per the limits in `run-pipeline.md` (3 per issue, 9 per stage)
 - **Blocker escalation:** When remediation limits are reached, invoke the reviewing agent and `solution-architect` in parallel to determine blocker status. Act on the result per `run-pipeline.md` rules
@@ -410,7 +411,7 @@ These are the points where the orchestrator must make or forward a decision:
 | # | Gate | Trigger | Autopilot action | Co-pilot action |
 |---|---|---|---|---|
 | 1 | Requirements ambiguities | `STATUS: BLOCKED` from requirements-analyst | Resolve conservatively per NFR baseline | Answer on master's behalf |
-| 2 | Architecture sign-off | All 7 deliverables present, awaiting approval | Approve if standards met; reject if gaps | Answer on master's behalf |
+| 2 | Architecture sign-off | All 8 deliverables present, awaiting approval | Approve if standards met; reject if gaps | Answer on master's behalf |
 | 3 | API spec sign-off | `api-spec.yaml` produced, awaiting approval | Approve if OpenAPI valid and complete | Answer on master's behalf |
 | 4 | Standards conflict | `STATUS: BLOCKED` from any agent | Resolve per conflict-resolution policy | Answer on master's behalf |
 | 5 | Code review findings | Review artifact produced | Accept non-blockers; reject blockers | Answer on master's behalf |
