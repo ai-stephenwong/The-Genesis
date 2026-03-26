@@ -9,33 +9,87 @@
 
 **Role:** Evaluate agent performance after a bug batch or deficiency set is discovered, score each implicated agent against their defined responsibilities, and produce actionable SDLC improvement proposals. This is a **meta-pipeline role** — it does not run as part of the standard build pipeline but is triggered separately whenever a batch of bugs or issues is found (typically after staging deployment, integration testing, or production incidents).
 
-**Trigger:** User says "run retrospective" and provides a bug/issue report. The orchestrator identifies which agents are implicated, requests a self-review from each, then spawns the retrospective-analyst with all inputs.
+**Trigger:** User says "run retrospective" and provides a bug/issue report. The retrospective-analyst is invoked **twice** during the retrospective cycle — first to produce the Implication Report, then again (after self-reviews are collected) to produce the full Retrospective.
 
-**Orchestrator gate — self-reviews required:** The retrospective-analyst MUST NOT be spawned until a self-review artifact has been received from every implicated agent. If an agent fails to produce a self-review (or if the agent instance is no longer available), the orchestrator must note the absence explicitly in the retrospective trigger — the gate must not be silently skipped. The absence of a self-review reduces the quality score ceiling for that agent's self-review dimension and must be documented in the retrospective under "Self-Review Quality."
+**Phase 1 — Implication Report:** The orchestrator invokes the retrospective-analyst as a sub-agent with the bug report. The retrospective-analyst analyses each bug, traces it through the pipeline stages, and produces an **Implication Report** — a formal artifact that determines which agents are implicated and why (or explicitly not implicated and why not). The orchestrator uses this report to request self-reviews from the implicated agents.
+
+**Phase 2 — Full Retrospective (gate — self-reviews required):** The retrospective-analyst MUST NOT be invoked for Phase 2 until a self-review artifact has been received from every agent listed as implicated in the Implication Report. If an agent fails to produce a self-review (or if the agent instance is no longer available), the orchestrator must note the absence explicitly — the gate must not be silently skipped. The absence of a self-review reduces the quality score ceiling for that agent's self-review dimension and must be documented in the retrospective under "Self-Review Quality."
 
 | Contract | Paths |
 |---|---|
-| **Reads** | `artifacts/development/bug-report-YYYYMMDD-HHmm.md`, `artifacts/{agent}/self-review-YYYYMMDD-HHmm.md` (all implicated agents), all pipeline artifacts from the affected cycle (`artifacts/*/`), `agent_docs/generic/agent-roles.md` (scoring rubric) |
-| **Writes** | `artifacts/retrospective/retrospective-YYYYMMDD-HHmm.md` |
+| **Reads (Phase 1)** | `artifacts/development/bug-report-YYYYMMDD-HHmm.md`, all pipeline artifacts from the affected cycle (`artifacts/*/`), `agent_docs/generic/agent-roles.md` (role definitions) |
+| **Writes (Phase 1)** | `artifacts/retrospective/implication-report-YYYYMMDD-HHmm.md` |
+| **Reads (Phase 2)** | `artifacts/retrospective/implication-report-YYYYMMDD-HHmm.md`, `artifacts/{agent}/self-review-YYYYMMDD-HHmm.md` (all implicated agents), all pipeline artifacts from the affected cycle (`artifacts/*/`), `agent_docs/generic/agent-roles.md` (scoring rubric) |
+| **Writes (Phase 2)** | `artifacts/retrospective/retrospective-YYYYMMDD-HHmm.md` |
 
 **How the retrospective cycle works:**
 
 ```
 Bug batch / issue report found
         ↓
-Orchestrator identifies implicated agents (based on root causes in bug report)
+Orchestrator invokes retrospective-analyst (Phase 1 — sub-agent)
+  in:  bug-report-YYYYMMDD-HHmm.md + all pipeline artifacts
+  out: artifacts/retrospective/implication-report-YYYYMMDD-HHmm.md
         ↓
-Each implicated agent produces a self-review
-  in:  bug-report-YYYYMMDD-HHmm.md
-       their own pipeline artifacts from the affected cycle
+Orchestrator requests self-reviews from implicated agents (per implication report)
+  in:  bug-report-YYYYMMDD-HHmm.md + their own pipeline artifacts
   out: artifacts/{agent}/self-review-YYYYMMDD-HHmm.md
         ↓
-retrospective-analyst reads all self-reviews + all pipeline artifacts
+Orchestrator invokes retrospective-analyst (Phase 2 — sub-agent)
+  in:  implication report + all self-reviews + all pipeline artifacts
   out: artifacts/retrospective/retrospective-YYYYMMDD-HHmm.md
         ↓
 Orchestrator presents SDLC improvement proposals to user for approval
   → If approved: update agent_docs/generic/agent-roles.md + propagate to all active projects
 ```
+
+**Implication Report output format** (written by retrospective-analyst in Phase 1 to `artifacts/retrospective/implication-report-YYYYMMDD-HHmm.md`):
+
+```markdown
+# Implication Report — YYYY-MM-DD HH:mm
+## Trigger
+  Bug report: [file reference]
+  Round: [round number]
+
+## Methodology
+  For each bug, traced through every pipeline stage (requirements-analyst → ... → deploy)
+  and checked each agent's defined responsibilities in agent-roles.md to determine
+  whether the agent had both the information and the defined responsibility to catch it.
+
+## Per-Bug Implication Analysis
+### BUG-01 — [title from bug report]
+| Pipeline Stage | Agent | Had info to catch it? | Had defined responsibility? | Implicated? | Reasoning |
+|---|---|---|---|---|---|
+| requirements | requirements-analyst | Yes/No | Yes/No | Yes/No | [one line] |
+| architecture | solution-architect | Yes/No | Yes/No | Yes/No | [one line] |
+| development | developer | Yes/No | Yes/No | Yes/No | [one line] |
+| code-review | code-reviewer | Yes/No | Yes/No | Yes/No | [one line] |
+| testing | tester | Yes/No | Yes/No | Yes/No | [one line] |
+| security | security-auditor | Yes/No | Yes/No | Yes/No | [one line] |
+| compliance | compliance-officer | Yes/No | Yes/No | Yes/No | [one line] |
+| devops | devops-engineer | Yes/No | Yes/No | Yes/No | [one line] |
+
+(repeat for each bug)
+
+## Implication Summary
+| Agent | Implicated? | Bugs attributed | Reasoning |
+|---|---|---|---|
+| developer | Yes | BUG-01, BUG-03 | [summary] |
+| tester | Yes | BUG-01, BUG-02, BUG-03 | [summary] |
+| code-reviewer | No | — | [why not — e.g. "bug was in business logic not covered by code-review checklist"] |
+| ... | ... | ... | ... |
+
+## Agents requiring self-review
+[Ordered list of implicated agent names]
+
+## Framework gaps (preliminary)
+[Any bugs where NO agent had a defined responsibility to catch it — these are framework gaps,
+not agent failures. Listed here for Phase 2 analysis.]
+
+## Sign-off: retrospective-analyst (implication analysis) — YYYY-MM-DD HH:mm
+```
+
+---
 
 **Self-review output format** (used by every implicated agent, written to `artifacts/{agent}/self-review-YYYYMMDD-HHmm.md`):
 
@@ -64,7 +118,17 @@ Orchestrator presents SDLC improvement proposals to user for approval
 ```
 
 **Responsibilities:**
-- Read the bug report and each self-review; verify that each self-review is complete and honest
+
+*Phase 1 — Implication Report:*
+- Read the bug report and all pipeline artifacts from the affected cycle
+- For each bug, trace through every pipeline stage and check each agent's defined responsibilities in `agent-roles.md`
+- Determine which agents had both the information and the defined responsibility to catch the bug
+- Produce the Implication Report with per-bug analysis and a summary of implicated agents
+- Identify preliminary framework gaps where no agent had a defined responsibility
+
+*Phase 2 — Full Retrospective:*
+- Read the implication report, all self-reviews, and all pipeline artifacts
+- Verify that each self-review is complete and honest
 - **For every bug/issue, answer two mandatory questions:**
   1. **"Why did no one in the pipeline notice this?"** — Trace the bug through every pipeline stage from requirements-analyst to tester. For each stage, determine: did this agent have the information and defined responsibility to catch it? If yes, why didn't they? If no, which stage *should* have caught it earliest? Name the specific agent, the specific responsibility (or missing responsibility), and the exact point where the defect became detectable. Do not accept "it was outside their scope" without verifying against the agent's full role definition.
   2. **"How can the pipeline be improved to catch this as early as possible?"** — Propose the change at the **earliest** pipeline stage where the defect was detectable — not where it was eventually found. A bug catchable at architecture should not be addressed by adding a tester rule. A bug catchable at code-review should not wait for deployment smoke tests. Always push the fix upstream. Document which stage the bug was actually caught, which stage it *should* have been caught, and the stage gap (number of stages it slipped through).

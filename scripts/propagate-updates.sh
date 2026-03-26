@@ -171,6 +171,55 @@ for DEST in "${TARGETS[@]}"; do
   echo ""
 
   # ---------------------------------------------------------------------------
+  # 1b. OVERWRITE — agent role definition files (agents/*.md)
+  # ---------------------------------------------------------------------------
+  echo -e "  ${BOLD}[1b] Updating agent role definitions...${NC}"
+
+  AGENTS_SRC="$GENERIC_SRC/agents"
+  AGENTS_DEST="$GENERIC_DEST/agents"
+  mkdir -p "$AGENTS_DEST"
+
+  # Sync all agent files from Genesis to child project
+  for src_file in "$AGENTS_SRC"/*.md; do
+    [[ ! -f "$src_file" ]] && continue
+    filename="$(basename "$src_file")"
+    dest_file="$AGENTS_DEST/$filename"
+
+    if [[ -f "$dest_file" ]]; then
+      if ! diff -q "$src_file" "$dest_file" > /dev/null 2>&1; then
+        cp "$src_file" "$dest_file"
+        echo -e "    ${GREEN}↺  Updated:${NC} agent_docs/generic/agents/$filename"
+        ((OVERWRITTEN++))
+      else
+        echo -e "    —  No change: agent_docs/generic/agents/$filename"
+      fi
+    else
+      cp "$src_file" "$dest_file"
+      echo -e "    ${GREEN}+  Added:${NC} agent_docs/generic/agents/$filename"
+      ((ADDED++))
+    fi
+  done
+
+  # Remove agent files in child that no longer exist in Genesis (e.g. pilot-spec.md merged into orchestrator.md)
+  for dest_file in "$AGENTS_DEST"/*.md; do
+    [[ ! -f "$dest_file" ]] && continue
+    filename="$(basename "$dest_file")"
+    if [[ ! -f "$AGENTS_SRC/$filename" ]]; then
+      rm "$dest_file"
+      echo -e "    ${RED}✗  Removed (no longer in Genesis):${NC} agent_docs/generic/agents/$filename"
+      ((REMOVED++))
+    fi
+  done
+
+  # Remove pilot-spec.md from generic/ root if it exists (merged into agents/orchestrator.md)
+  if [[ -f "$GENERIC_DEST/pilot-spec.md" ]]; then
+    rm "$GENERIC_DEST/pilot-spec.md"
+    echo -e "    ${RED}✗  Removed (merged into agents/orchestrator.md):${NC} agent_docs/generic/pilot-spec.md"
+    ((REMOVED++))
+  fi
+  echo ""
+
+  # ---------------------------------------------------------------------------
   # 2. PLATFORM — copy only applicable deployment files, remove others
   # ---------------------------------------------------------------------------
   echo -e "  ${BOLD}[2] Syncing platform-specific deployment files...${NC}"

@@ -5,7 +5,7 @@
 > Defines the standard agents used across all projects, their responsibilities,
 > input/output contracts, and separation-of-duty boundaries.
 >
-> Each agent must be an **independent Claude sub-agent** spawned by the orchestrator.
+> Each agent must be an **independent Claude sub-agent** invoked by the orchestrator.
 > An agent must never perform work outside its defined role — this prevents conflict
 > of interest and ensures rigorous, unbiased outputs.
 >
@@ -71,7 +71,7 @@ A PASS WITH CONDITIONS verdict with unresolved Critical findings **must not** al
 
 > **Every agent defined below is subject to the self-review requirement when implicated in a retrospective.**
 
-When the orchestrator triggers a retrospective (`run retrospective`), it identifies which agents' defined responsibilities should have caught each bug or deficiency. Every implicated agent **must** produce a self-review report before the `retrospective-analyst` is spawned.
+When the orchestrator triggers a retrospective (`run retrospective`), it first invokes the `retrospective-analyst` as a sub-agent to produce an **Implication Report** — a formal artifact that analyses the bug report and determines which agents are implicated and why. The orchestrator then uses this report to request self-reviews from the implicated agents. Every implicated agent **must** produce a self-review report before the `retrospective-analyst` is invoked again for the full retrospective.
 
 **Self-review is mandatory — not optional.** An agent that fails to produce a self-review, produces an incomplete one, or deflects responsibility inaccurately will have its self-review quality scored separately by the `retrospective-analyst` and a lower score recorded for that round.
 
@@ -90,6 +90,7 @@ Each agent's full role definition, responsibilities, I/O contracts, and output f
 
 | # | Agent | File |
 |---|---|---|
+| 0 | `orchestrator` (nickname: pilot) | `agents/orchestrator.md` |
 | 1 | `requirements-analyst` | `agents/requirements-analyst.md` |
 | 2 | `uiux-reviewer` | `agents/uiux-reviewer.md` |
 | 3 | `solution-architect` | `agents/solution-architect.md` |
@@ -103,7 +104,7 @@ Each agent's full role definition, responsibilities, I/O contracts, and output f
 | 11 | `deploy-production` | `agents/deploy-production.md` |
 | 12 | `retrospective-analyst` | `agents/retrospective-analyst.md` |
 
-When spawning an agent, the orchestrator must provide:
+When invoking an agent as a sub-agent, the orchestrator must provide:
 1. This file (`agent-roles.md`) — for universal rules and pipeline context
 2. The agent's individual file (`agents/{role}.md`) — for specific responsibilities
 3. The required input artifacts listed in the agent's I/O contract
@@ -124,6 +125,7 @@ When spawning an agent, the orchestrator must provide:
 6. **A stage must not start** if its required input artifact is missing or flagged as incomplete
 7. **`retrospective-analyst` is a meta-pipeline agent** — it never runs as part of the standard build pipeline; it is only triggered by "run retrospective" with a bug/issue report as input
 8. **Never modify The Genesis directly** — child project agents must NEVER write to, edit, or delete any file inside The Genesis project folder (`-The Genesis/`). The Genesis is the governing framework; child projects are subject to it, not equal to it. The only permitted mechanism for proposing changes to The Genesis is a **tribute** (see `run-retrospective.md` Step 6). This rule applies at the operations level: no agent running inside a child project may issue any file-write command targeting The Genesis directory, regardless of how good the intention is. Only agents running inside The Genesis project itself may modify its files.
+9. **Minimum Viable Deploy — get online first, perfect later.** Non-critical configuration (custom domains, verified sending domains, production-tier plans, DNS records) must never block the pipeline. If a production-ready setup requires human action but a test/sandbox/trial mode exists that is sufficient to deploy and verify, **use the test mode and keep moving**. Log the production upgrade as a to-do in the Decision Log — a to-do is not a blocker. Every agent must apply this principle: do not flag test-mode limitations as pipeline failures, do not wait for production-grade configuration when a working default exists. The pipeline's job is to produce a running, verified application — production hardening is a follow-up. See `agents/orchestrator.md` — Minimum Viable Deploy for the full rule and common test/sandbox modes.
 
 ---
 
@@ -137,7 +139,7 @@ To resume the pipeline from a specific stage:
 
 Example: If `code-reviewer` artifact exists but `security-auditor` has not run:
 ```
--> spawn security-auditor
+-> invoke security-auditor (sub-agent)
   input: artifacts/code-review/review-20260316-1430.md
          src/
          agent_docs/generic/security-checklist.md

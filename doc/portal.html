@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Project Portal</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; background: #0f1117; color: #e1e4e8; display: flex; height: 100vh; overflow: hidden; }
+
+  /* Sidebar */
+  nav { width: 220px; min-width: 220px; background: #161b22; border-right: 1px solid #30363d; display: flex; flex-direction: column; height: 100vh; overflow-y: auto; }
+  nav .brand { padding: 14px 16px 20px; font-size: 15px; font-weight: 600; color: #58a6ff; border-bottom: 1px solid #30363d; }
+  nav .section-label { padding: 14px 16px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #8b949e; }
+  nav a { display: flex; align-items: center; gap: 10px; padding: 9px 16px; color: #c9d1d9; text-decoration: none; font-size: 13px; transition: background 0.15s; cursor: pointer; border-left: 3px solid transparent; }
+  nav a:hover { background: #1f2937; color: #fff; }
+  nav a.active { background: #1f2937; color: #58a6ff; border-left-color: #58a6ff; }
+  nav a svg { width: 18px; height: 18px; flex-shrink: 0; }
+  nav .spacer { flex: 1; }
+  nav .nav-footer { padding: 12px 16px; border-top: 1px solid #30363d; font-size: 11px; color: #484f58; }
+  nav .open-ext { font-size: 11px; color: #484f58; margin-left: auto; opacity: 0; transition: opacity 0.15s; }
+  nav a:hover .open-ext { opacity: 1; }
+
+  /* Main content */
+  .content { flex: 1; display: flex; flex-direction: column; height: 100vh; }
+  .toolbar { display: flex; align-items: center; gap: 12px; padding: 8px 16px; background: #161b22; border-bottom: 1px solid #30363d; min-height: 42px; }
+  .toolbar .current-url { flex: 1; font-size: 12px; color: #8b949e; background: #0d1117; border: 1px solid #30363d; border-radius: 4px; padding: 4px 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .toolbar button { background: #21262d; border: 1px solid #30363d; color: #c9d1d9; padding: 4px 12px; border-radius: 4px; font-size: 12px; cursor: pointer; }
+  .toolbar button:hover { background: #30363d; }
+
+  iframe { flex: 1; border: none; background: #fff; }
+
+  /* Welcome screen */
+  .welcome { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; }
+  .welcome h1 { font-size: 24px; color: #e1e4e8; }
+  .welcome p { color: #8b949e; font-size: 14px; }
+  .welcome.hidden { display: none; }
+  iframe.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="brand">Project Portal</div>
+
+  <div class="section-label">Services</div>
+
+  <a data-url="https://github.com" onclick="loadService(this)">
+    <svg viewBox="0 0 24 24" fill="#c9d1d9"><path d="M12 .5C5.37.5 0 5.78 0 12.292c0 5.21 3.438 9.63 8.205 11.188.6.111.82-.254.82-.567 0-.28-.01-1.022-.015-2.005-3.338.711-4.042-1.582-4.042-1.582-.546-1.361-1.333-1.723-1.333-1.723-1.089-.73.083-.716.083-.716 1.205.083 1.838 1.215 1.838 1.215 1.07 1.802 2.807 1.281 3.492.98.108-.763.418-1.282.762-1.577-2.665-.297-5.466-1.309-5.466-5.827 0-1.287.465-2.34 1.228-3.165-.123-.298-.532-1.497.117-3.12 0 0 1.001-.314 3.28 1.209A11.5 11.5 0 0 1 12 6.844c1.02.005 2.047.136 3.006.398 2.277-1.523 3.276-1.209 3.276-1.209.65 1.623.241 2.822.118 3.12.765.825 1.226 1.878 1.226 3.165 0 4.53-2.805 5.527-5.475 5.817.43.365.815 1.084.815 2.184 0 1.576-.015 2.846-.015 3.232 0 .316.216.683.825.567C20.565 21.917 24 17.495 24 12.292 24 5.78 18.627.5 12 .5z"/></svg>
+    GitHub
+    <span class="open-ext">&#x2197;</span>
+  </a>
+
+  <a data-url="https://dashboard.doppler.com" onclick="loadService(this)">
+    <svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="10" stroke="#c9d1d9" stroke-width="2"/><circle cx="12" cy="12" r="4" fill="#c9d1d9"/></svg>
+    Doppler
+    <span class="open-ext">&#x2197;</span>
+  </a>
+
+  <a data-url="https://vercel.com/dashboard" onclick="loadService(this)">
+    <svg viewBox="0 0 24 24" fill="#c9d1d9"><path d="M12 1L24 22H0L12 1z"/></svg>
+    Vercel
+    <span class="open-ext">&#x2197;</span>
+  </a>
+
+  <a data-url="https://dash.cloudflare.com" onclick="loadService(this)">
+    <svg viewBox="0 0 24 24" fill="#c9d1d9"><path d="M16.51 17.93l.39-1.34a1.77 1.77 0 0 0-.07-1.31 1.65 1.65 0 0 0-1.05-.82l-8.04-.24a.27.27 0 0 1-.24-.16.28.28 0 0 1 .03-.29.35.35 0 0 1 .28-.14l8.16-.25a3.39 3.39 0 0 0 2.88-2.26l.65-1.83a.47.47 0 0 0 .02-.17A5.77 5.77 0 0 0 8.35 7.2a3.52 3.52 0 0 0-5.61 2.3A4.32 4.32 0 0 0 0 13.74a4.36 4.36 0 0 0 .15 1.12.19.19 0 0 0 .18.14h15.87a.36.36 0 0 0 .31-.21zM19.35 9.55a.14.14 0 0 0-.14.12 3.48 3.48 0 0 1-.63 1.5.13.13 0 0 0 0 .14l-.54 1.85a1.77 1.77 0 0 1-.07 1.31 1.65 1.65 0 0 1-1.05.82.35.35 0 0 0-.28.14.28.28 0 0 0-.03.29.27.27 0 0 0 .24.16l2.28.07a4.64 4.64 0 0 0 4.87-4.63 4.67 4.67 0 0 0-4.65-4.67z"/></svg>
+    Cloudflare
+    <span class="open-ext">&#x2197;</span>
+  </a>
+
+  <a data-url="https://railway.com/dashboard" onclick="loadService(this)">
+    <svg viewBox="0 0 24 24" fill="#c9d1d9"><path d="M.113 14.725c.013.04.026.078.04.117l7.477-5.87a.563.563 0 0 1 .695 0l7.477 5.87c.014-.039.027-.078.04-.117L8.325 8.855a.563.563 0 0 0-.695 0L.113 14.725zM2.06 18.643c.038.055.077.11.118.163l5.8-4.553a.563.563 0 0 1 .695 0l5.8 4.553c.04-.053.08-.108.118-.163L8.325 13.59a.563.563 0 0 0-.695 0L2.06 18.643zM5.684 21.67c.072.05.146.098.221.144l1.952-1.533a.563.563 0 0 1 .695 0l1.952 1.533c.075-.046.15-.094.221-.144L8.325 19.86a.563.563 0 0 0-.695 0L5.684 21.67zM8.325 3.727a.563.563 0 0 0-.695 0L.048 10.34c0 .047 0 .094.003.141l7.93-6.226a.563.563 0 0 1 .695 0l7.93 6.226c.002-.047.003-.094.003-.141L8.325 3.727z"/></svg>
+    Railway
+    <span class="open-ext">&#x2197;</span>
+  </a>
+
+  <a data-url="https://resend.com" onclick="loadService(this)">
+    <svg viewBox="0 0 24 24" fill="#c9d1d9"><path d="M2 4h14a2 2 0 0 1 2 2v1l-8 5L2 7V6a2 2 0 0 1 2-2zm0 4.5l8 5 8-5V18a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8.5z"/></svg>
+    Resend
+    <span class="open-ext">&#x2197;</span>
+  </a>
+
+  <a data-url="https://console.neon.tech" onclick="loadService(this)">
+    <svg viewBox="0 0 24 24" fill="#c9d1d9"><path d="M3 4.5A1.5 1.5 0 0 1 4.5 3h15A1.5 1.5 0 0 1 21 4.5v15a1.5 1.5 0 0 1-1.5 1.5H18v-7.5L12 18l-6-4.5V21H4.5A1.5 1.5 0 0 1 3 19.5v-15z"/></svg>
+    Neon
+    <span class="open-ext">&#x2197;</span>
+  </a>
+
+  <a data-url="https://console.upstash.com" onclick="loadService(this)">
+    <svg viewBox="0 0 24 24" fill="#c9d1d9"><path d="M12 2C6.48 2 2 6 2 10.5c0 3 2 5.5 5 7v4.5l3-2.5h2c5.52 0 10-4 10-8.5S17.52 2 12 2zm0 15h-2.5L7 19v-3.1C4.61 14.42 3 12.54 3 10.5 3 6.91 7.03 4 12 4s9 2.91 9 6.5S16.97 17 12 17z"/></svg>
+    Upstash
+    <span class="open-ext">&#x2197;</span>
+  </a>
+
+  <a data-url="https://tagmanager.google.com" onclick="loadService(this)">
+    <svg viewBox="0 0 24 24" fill="#c9d1d9"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+    GTM
+    <span class="open-ext">&#x2197;</span>
+  </a>
+
+  <div class="section-label">Monitoring</div>
+
+  <a data-url="https://sentry.io" onclick="loadService(this)">
+    <svg viewBox="0 0 24 24" fill="#c9d1d9"><path d="M13.91 2.33a1.64 1.64 0 0 0-2.82 0L8.37 7.6a10.94 10.94 0 0 1 5.47 5.48h3.46a.82.82 0 0 0 .7-1.23l-4.09-9.52zM5.37 14.21a.82.82 0 0 0-.7 1.23l2.36 5.5a1.64 1.64 0 0 0 2.82 0l1.17-2.72a7.85 7.85 0 0 0-5.65-4.01zm12.76 4.59h-2.64a5.7 5.7 0 0 0-5.7-5.7V10.5a8.3 8.3 0 0 1 8.34 8.3z"/></svg>
+    Sentry
+    <span class="open-ext">&#x2197;</span>
+  </a>
+
+  <div class="spacer"></div>
+  <div class="nav-footer">Click a service to load it here.<br>Hover &#x2197; to open in new tab.</div>
+</nav>
+
+<div class="content">
+  <div class="toolbar">
+    <span class="current-url" id="currentUrl">No service loaded</span>
+    <button onclick="openExternal()">Open in browser</button>
+    <button onclick="refreshFrame()">Reload</button>
+  </div>
+
+  <div class="welcome" id="welcome">
+    <h1>Project Portal</h1>
+    <p>Select a service from the sidebar to get started.</p>
+  </div>
+
+  <iframe id="serviceFrame" class="hidden" sandbox="allow-same-origin allow-scripts allow-popups allow-forms allow-popups-to-escape-sandbox" referrerpolicy="no-referrer"></iframe>
+</div>
+
+<script>
+  let currentUrl = '';
+
+  function loadService(el) {
+    const url = el.dataset.url;
+    currentUrl = url;
+
+    // Update active state
+    document.querySelectorAll('nav a').forEach(a => a.classList.remove('active'));
+    el.classList.add('active');
+
+    // Update toolbar
+    document.getElementById('currentUrl').textContent = url;
+
+    // Show iframe, hide welcome
+    document.getElementById('welcome').classList.add('hidden');
+    const frame = document.getElementById('serviceFrame');
+    frame.classList.remove('hidden');
+    frame.src = url;
+  }
+
+  function openExternal() {
+    if (currentUrl) window.open(currentUrl, '_blank');
+  }
+
+  function refreshFrame() {
+    const frame = document.getElementById('serviceFrame');
+    if (frame.src) frame.src = frame.src;
+  }
+
+  // Allow hover arrow to open in new tab without loading in iframe
+  document.querySelectorAll('.open-ext').forEach(span => {
+    span.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const url = span.closest('a').dataset.url;
+      window.open(url, '_blank');
+    });
+  });
+</script>
+
+</body>
+</html>

@@ -219,19 +219,27 @@ All other stages are sequential.
 
 ## Pipeline Status
 
-| # | Stage | Last Run | Artifact | Status |
-|---|---|---|---|---|
-| 1 | requirements-analyst | — | — | Not started |
-| 2 | solution-architect | — | — | Not started |
-| 3a | developer | — | — | Not started |
-| 3b | devops-engineer | — | — | Not started |
-| 4a | code-reviewer | — | — | Not started |
-| 4b | tester | — | — | Not started |
-| 4c | uiuiux-reviewer | — | — | Not started |
-| 5 | security-auditor | — | — | Not started |
-| 6 | compliance-officer | — | — | Not started |
-| 7 | deploy-staging | — | — | Not started |
-| 8 | deploy-production | — | — | Not started |
+| # | Stage | Started | Completed | Process Time | Artifact | Status |
+|---|---|---|---|---|---|---|
+| 1 | requirements-analyst | — | — | — | — | Not started |
+| 2 | solution-architect | — | — | — | — | Not started |
+| 3a | developer | — | — | — | — | Not started |
+| 3b | devops-engineer | — | — | — | — | Not started |
+| 4a | code-reviewer | — | — | — | — | Not started |
+| 4b | tester | — | — | — | — | Not started |
+| 4c | uiux-reviewer | — | — | — | — | Not started |
+| 5 | security-auditor | — | — | — | — | Not started |
+| 6 | compliance-officer | — | — | — | — | Not started |
+| 7 | deploy-staging | — | — | — | — | Not started |
+| 8 | deploy-production | — | — | — | — | Not started |
+| | **TOTAL** | | | **—** | | |
+
+> **Timing rules:**
+> - `Started` / `Completed`: wall-clock timestamps (`YYYY-MM-DD HH:mm`)
+> - `Process Time`: actual working time the sub-agent spent executing (exclude interruptions such as permission prompts, token limit pauses, session restarts, waiting for user input). Format: `Xh Ym` or `Ym Zs`.
+> - When a stage spans multiple sessions (e.g. token limit reached mid-stage), the orchestrator in the resuming session adds the new processing time to the accumulated total — do not reset.
+> - Remediation rounds are tracked as separate rows (e.g. `4a-R1`, `5-R1`) with their own timing. They count toward the stage total but are visible individually.
+> - The `TOTAL` row sums all `Process Time` values. Update it after every stage completion.
 
 ## Retrospective History
 

@@ -13,15 +13,39 @@ Execute this when the user says **"run retrospective"**.
 1. Find the latest `artifacts/development/bug-report-YYYYMMDD-HHmm.md` that has `Status: OPEN`.
 2. If none exists: halt. Inform the user that a bug report must be created by the tester before the retrospective can run.
 3. **Immediately mark the file `Status: FROZEN`** — write this change before doing anything else. This prevents any further edits to that file. All new bugs found after this point must go into a new `bug-report-YYYYMMDD-HHmm.md`.
-4. Read the frozen bug report and determine which agents' defined responsibilities (from `agent_docs/generic/agent-roles.md`) should have caught each issue.
-
-If the user has not specified which agents are implicated, determine automatically from the root causes. Ask the user to confirm the list before proceeding.
+4. Read the frozen bug report in preparation for the implication analysis.
 
 ---
 
-## Step 2 — Spawn self-reviews (parallel)
+## Step 2 — Produce Implication Report
 
-Spawn one agent instance per implicated role, in parallel. Each agent:
+Invoke the `retrospective-analyst` as a sub-agent (Phase 1) with:
+- The frozen bug report
+- All pipeline artifacts from the affected cycle (`artifacts/*/`)
+- `agent_docs/generic/agent-roles.md` (role definitions)
+
+The retrospective-analyst analyses each bug, traces it through every pipeline stage, and produces:
+- `artifacts/retrospective/implication-report-YYYYMMDD-HHmm.md`
+
+This artifact documents which agents are implicated (and why) and which are not (and why not) for each bug. See `agents/retrospective-analyst.md` for the full format.
+
+Present the implication summary to the user for confirmation before proceeding:
+
+```
+Implication Report produced. Agents requiring self-review:
+
+  1. developer — BUG-01, BUG-03
+  2. tester — BUG-01, BUG-02, BUG-03
+  3. ...
+
+Proceed with self-reviews? [Y/n/adjust]
+```
+
+---
+
+## Step 3 — Request self-reviews (parallel)
+
+Invoke one sub-agent per implicated role (as listed in the implication report), in parallel. Each agent:
 - Reads the **frozen** bug report
 - Reads its own pipeline artifacts from the affected cycle
 - Writes a self-review to `artifacts/{agent-name}/self-review-YYYYMMDD-HHmm.md`
@@ -65,11 +89,12 @@ Spawn one agent instance per implicated role, in parallel. Each agent:
 
 ---
 
-## Step 3 — Spawn retrospective-analyst
+## Step 4 — Invoke retrospective-analyst (Phase 2)
 
-Once all self-reviews are complete, spawn the `retrospective-analyst` with:
+Once all self-reviews are complete, invoke the `retrospective-analyst` as a sub-agent (Phase 2) with:
+- The implication report from Step 2
 - The bug report
-- All self-reviews from Step 2
+- All self-reviews from Step 3
 - All pipeline artifacts from the affected cycle (`artifacts/*/`)
 - `agent_docs/generic/agent-roles.md` as the scoring rubric
 
@@ -129,7 +154,7 @@ The retrospective-analyst writes `artifacts/retrospective/retrospective-YYYYMMDD
 
 ---
 
-## Step 4 — Present SDLC improvement proposals
+## Step 5 — Present SDLC improvement proposals
 
 If the retrospective report contains `PROP-XX` entries, present them to the user:
 
@@ -148,7 +173,7 @@ Would you like to apply these to agent_docs/generic/agent-roles.md? [Y/n/review 
 
 ---
 
-## Step 5 — Multiple rounds
+## Step 6 — Multiple rounds
 
 If a second bug batch is found after fixes are applied, repeat with an incremented round number. The retrospective-analyst tracks scores across rounds and notes trend direction.
 
@@ -170,7 +195,7 @@ If a second bug batch is found after fixes are applied, repeat with an increment
 
 ---
 
-## Step 6 — Produce a Tribute (when SDLC proposals exist)
+## Step 7 — Produce a Tribute (when SDLC proposals exist)
 
 A **tribute** is the formal output package that the retrospective-analyst produces when it has SDLC improvement proposals ready to be absorbed by The Genesis. It is the mechanism by which a child project humbly submits lessons learned back upstream for The Genesis to judge.
 
@@ -186,6 +211,7 @@ A **tribute** is the formal output package that the retrospective-analyst produc
 ```
 tribute-{project-slug}-{YYYYMMDD-HHmm}/
 ├── TRIBUTE.md                          ← cover document (required)
+├── implication-report-{YYYYMMDD-HHmm}.md ← implication analysis (which agents and why)
 ├── retrospective-{YYYYMMDD-HHmm}.md    ← full retrospective artifact
 ├── bug-report-{YYYYMMDD-HHmm}.md       ← the triggering bug report
 ├── self-review-{YYYYMMDD-HHmm}.md      ← one per implicated agent
@@ -227,6 +253,7 @@ tribute-{project-slug}-{YYYYMMDD-HHmm}/
 | File | Description |
 |---|---|
 | `TRIBUTE.md` | This cover document |
+| `implication-report-YYYYMMDD-HHmm.md` | Implication analysis — which agents and why |
 | `retrospective-YYYYMMDD-HHmm.md` | Full retrospective |
 | `bug-report-YYYYMMDD-HHmm.md` | Triggering bug report |
 | `self-review-YYYYMMDD-HHmm.md` | [agent] self-review |

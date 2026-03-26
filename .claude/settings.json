@@ -1,12 +1,9 @@
 {
   "permissions": {
     "allow": [
-      "Read(/Users/stephen.wong/Projects-AI-Agents/-The Genesis/*)",
-      "Write(/Users/stephen.wong/Projects-AI-Agents/-The Genesis/*)",
-      "Edit(/Users/stephen.wong/Projects-AI-Agents/-The Genesis/*)",
-      "Read(/Users/stephen.wong/Projects-AI-Agents/*)",
-      "Write(/Users/stephen.wong/Projects-AI-Agents/*)",
-      "Edit(/Users/stephen.wong/Projects-AI-Agents/*)",
+      "Read(../*)",
+      "Write(../*)",
+      "Edit(../*)",
       "Bash(git:*)",
       "Bash(npm:*)",
       "Bash(npx:*)",
@@ -30,9 +27,8 @@
       "Bash(cd:*)",
       "Bash(echo:*)",
       "Bash(doppler:*)",
-      "Bash(/Users/stephen.wong/homebrew/bin/doppler:*)",
-      "Bash(/Users/stephen.wong/homebrew/bin/brew:*)",
-      "Bash(/Users/stephen.wong/.npm-global/bin/railway:*)",
+      "Bash(brew:*)",
+      "Bash(railway:*)",
       "Bash(bash:*)",
       "Bash(which:*)",
       "Bash(sw_vers)",
@@ -54,6 +50,14 @@
       "WebSearch",
       "WebFetch(domain:github.com)",
       "WebFetch(domain:docs.anthropic.com)",
+      "WebFetch(domain:www.npmjs.com)",
+      "WebFetch(domain:vercel.app)",
+      "WebFetch(domain:vercel.com)",
+      "WebFetch(domain:railway.com)",
+      "WebFetch(domain:neon.tech)",
+      "WebFetch(domain:stape.io)",
+      "Bash(curl:https://*.vercel.app/*)",
+      "Bash(curl:https://*.railway.app/*)",
       "mcp__github__*",
       "mcp__vercel__*",
       "mcp__cloudflare-api__*",
@@ -62,12 +66,10 @@
       "mcp__upstash__*",
       "mcp__railway__*",
       "mcp__sentry__*",
-      "WebFetch(domain:www.npmjs.com)"
+      "mcp__google-tag-manager__*"
     ],
     "deny": [],
-    "additionalDirectories": [
-      "/Users/stephen.wong/Projects-AI-Agents"
-    ]
+    "additionalDirectories": []
   },
   "hooks": {
     "PreToolUse": [
@@ -76,7 +78,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/.claude/hooks/check-credential-inspection.py\""
+            "command": "python3 /Users/stephen.wong/Projects-AI-Agents/-The\\ Genesis/.claude/hooks/check-credential-inspection.py"
           }
         ]
       }

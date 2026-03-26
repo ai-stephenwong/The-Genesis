@@ -50,7 +50,7 @@ Generic standards live in `agent_docs/generic/`. Do not auto-load these at sessi
 | `agent_docs/generic/git-workflow.md` | Branching, commit, and PR conventions |
 | `agent_docs/generic/agent-roles.md` | Agent pipeline roles, I/O contracts, separation-of-duty rules |
 | `agent_docs/generic/uiux-standards.md` | UI/UX design principles, accessibility, responsive design, sensitive data display rules |
-| `agent_docs/generic/pilot-spec.md` | Pilot (external orchestrator) contract — Autopilot / Co-pilot / Manual modes, snapshot convention, decision log, approval summary |
+| `agent_docs/generic/agents/orchestrator.md` | Orchestrator (nickname: pilot) — mission, operating modes, gate handling, snapshot convention, decision log, approval summary |
 
 Platform-specific deployment standards:
 

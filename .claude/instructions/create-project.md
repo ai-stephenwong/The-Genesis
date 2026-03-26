@@ -190,6 +190,8 @@ Show a full summary including the confirmed folder name and ask: **"Create proje
 
 ## Step 5 — Files to create in the new project
 
+**Instruction files rule:** Copy **ALL** `.md` files from The Genesis `.claude/instructions/` into the child project's `.claude/instructions/`, **except** `create-project.md` (which is Genesis-only). Do not hard-code a list of filenames — always glob and copy so that any future instruction files are included automatically.
+
 ```
 {project-slug}/
 ├── CLAUDE.md                          ← use template at bottom of this file
@@ -197,9 +199,13 @@ Show a full summary including the confirmed folder name and ask: **"Create proje
 │   ├── settings.json                  ← GENERATE (not copy) — see Step 5b below
 │   ├── hooks/
 │   │   └── check-credential-inspection.py  ← copy from .claude/hooks/
-│   └── instructions/
-│       ├── session-start.md           ← copy from .claude/instructions/session-start.md
-│       └── run-pipeline.md            ← copy from .claude/instructions/run-pipeline.md
+│   └── instructions/                    ← copy ALL .md files from .claude/instructions/ (except create-project.md)
+│       ├── session-start.md
+│       ├── run-pipeline.md
+│       ├── run-retrospective.md
+│       ├── conflict-resolution.md
+│       ├── generate-compliance.md
+│       └── (any future instruction files)
 ├── agent_docs/
 │   ├── generic/                       ← copy ALL generic files (including deployment-vercel-cloudflare.md)
 │   │   ├── api-conventions.md
@@ -275,15 +281,15 @@ Show a full summary including the confirmed folder name and ask: **"Create proje
 
 All file operations (Read, Write, Edit) within the project folder and all sub-folders must be pre-approved so the pipeline runs without prompting the user.
 
-Generate `.claude/settings.json` with this structure (replace `{full-project-path}` and `{project-slug}`):
+Generate `.claude/settings.json` with this structure. **No absolute paths** — all paths must be relative to the project root. Child projects are always siblings of The Genesis folder.
 
 ```json
 {
   "permissions": {
     "allow": [
-      "Read({full-project-path}/*)",
-      "Write({full-project-path}/*)",
-      "Edit({full-project-path}/*)",
+      "Read(./*)",
+      "Write(./*)",
+      "Edit(./*)",
       "Bash(git:*)",
       "Bash(npm:*)",
       "Bash(npx:*)",
@@ -307,8 +313,7 @@ Generate `.claude/settings.json` with this structure (replace `{full-project-pat
       "Bash(cd:*)",
       "Bash(echo:*)",
       "Bash(doppler:*)",
-      "Bash(/Users/stephen.wong/homebrew/bin/doppler:*)",
-      "Bash(/Users/stephen.wong/homebrew/bin/brew:*)",
+      "Bash(brew:*)",
       "Bash(bash:*)",
       "Bash(which:*)",
       "Bash(sw_vers)",
@@ -336,9 +341,18 @@ Generate `.claude/settings.json` with this structure (replace `{full-project-pat
       "mcp__upstash__*",
       "mcp__railway__*",
       "mcp__sentry__*",
-      "Write(/Users/stephen.wong/Projects-AI-Agents/-The Genesis/tributes/inbox/*)"
+      "mcp__google-tag-manager__*",
+      "WebSearch",
+      "WebFetch(domain:vercel.app)",
+      "WebFetch(domain:vercel.com)",
+      "WebFetch(domain:railway.com)",
+      "WebFetch(domain:neon.tech)",
+      "Bash(curl:https://*.vercel.app/*)",
+      "Bash(curl:https://*.railway.app/*)",
+      "Write(../-The Genesis/tributes/inbox/*)"
     ],
     "deny": [],
+    "defaultMode": "bypassPermissions",
     "additionalDirectories": []
   },
   "hooks": {
@@ -348,7 +362,7 @@ Generate `.claude/settings.json` with this structure (replace `{full-project-pat
         "hooks": [
           {
             "type": "command",
-            "command": "python3 \"{full-project-path}/.claude/hooks/check-credential-inspection.py\""
+            "command": "python3 {full-project-path}/.claude/hooks/check-credential-inspection.py"
           }
         ]
       }
@@ -569,7 +583,7 @@ At the start of every conversation, read and follow `.claude/instructions/sessio
 - `agent_docs/generic/git-workflow.md` — branching, commit, and PR conventions
 - `agent_docs/generic/agent-roles.md` — agent pipeline roles, I/O contracts, separation-of-duty rules
 - `agent_docs/generic/uiux-standards.md` — UI/UX design principles, accessibility, responsive design, sensitive data display rules
-- `agent_docs/generic/pilot-spec.md` — Pilot orchestrator contract (Autopilot / Co-pilot / Manual modes)
+- `agent_docs/generic/agents/orchestrator.md` — Orchestrator role, operating modes, gate handling, decision log
 
 ### Project-Specific Docs (fill in per project)
 - `agent_docs/project/stack.md` — exact versions and dependencies

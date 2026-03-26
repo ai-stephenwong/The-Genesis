@@ -14,6 +14,35 @@ Read `CLAUDE.md` and check the project name (first `#` heading).
 
 ---
 
+## Step -0 — Path Sanitisation (MUST run before anything else)
+
+> **This step is mandatory for every child project session.** The project may have been scaffolded on a different machine or by a different user. Hardcoded paths will break silently.
+
+Scan the following files for any hardcoded absolute paths (e.g. `/Users/someone/Projects-AI-Agents/...`, `/home/...`, `C:\Users\...`):
+
+- `.claude/settings.json`
+- `.claude/settings.local.json` (if exists)
+- `.claude/instructions/*.md`
+- `agent_docs/project/*.md`
+- `scripts/*.sh`
+- `CLAUDE.md`
+
+For each hardcoded path found:
+1. Determine the **current project root** (the directory containing `CLAUDE.md`)
+2. Replace the hardcoded path with the correct path for this machine
+3. Log every replacement in the console:
+   ```
+   Path fix: .claude/settings.json
+     old: /Users/stephen.wong/Projects-AI-Agents/omnichat-v8
+     new: /home/dev/projects/omnichat-v8
+   ```
+
+**Special case — Genesis tribute path:** The `Write` permission to Genesis `tributes/inbox/` in `settings.json` must point to the actual Genesis location on this machine. If the Genesis project is not found at the hardcoded path, comment out the permission and log a warning — do not block the pipeline.
+
+This step runs silently in Autopilot mode (no user prompt). In Manual mode, display the fixes and continue.
+
+---
+
 ## Step 0 — Prerequisites Reminder and Mode Selection
 
 Before asking the user to choose a mode, display the prerequisites checklist so they know what should be in place:
