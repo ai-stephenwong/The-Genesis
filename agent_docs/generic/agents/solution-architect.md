@@ -2,6 +2,8 @@
 
 > This file defines the responsibilities for a single pipeline agent.
 > **Before reading this file**, read `agent-roles.md` for universal rules, pipeline overview, and orchestration rules that apply to ALL agents.
+>
+> **Validation:** After this agent completes, the orchestrator runs `scripts/validate/post-architect.sh` to verify outputs.
 
 ---
 
@@ -19,81 +21,34 @@
 | # | Deliverable | File | Description |
 |---|---|---|---|
 | 1 | Architecture diagram | `agent_docs/project/architecture.md` | System components, data flows, infrastructure — Mermaid diagrams |
-| 2 | ER diagram | `agent_docs/project/er-diagram.md` | All DB entities, fields, types, and relationships — Mermaid erDiagram format |
+| 2 | ER diagram | `agent_docs/project/er-diagram.md` | All DB entities, fields, types, and relationships — Mermaid erDiagram |
 | 3 | Functional specifications | `agent_docs/project/specs/functional-specs.md` | Feature-by-feature specs with user flows, business rules, acceptance criteria |
 | 4 | API specification | `agent_docs/project/specs/api-spec.yaml` | OpenAPI 3.1 — all endpoints, schemas, enums, error formats |
 | 5 | Platform compatibility matrix | Inside `architecture.md` | Library-by-library runtime compatibility sign-off |
-| 6 | Page-level Data Source Map | Inside architecture.md | Every page/route, every content section classified as Static or API with endpoint reference — binding contract for developer |
-| 7 | Runtime version pinning | `.nvmrc` (Node.js) / `.java-version` (Java) / `.python-version` (Python) / `.tool-versions` (polyglot) | Pins exact runtime version; consumed by developer, devops-engineer, and CI. Must match the version in `stack.md`. |
-| 8 | Environment Variable Contract | `agent_docs/project/env-contract.md` | Canonical registry of every env var across all services — exact key names, owning service, required/optional, source. Binding contract for developer and devops-engineer. |
+| 6 | Page-level Data Source Map | Inside `architecture.md` | Every page/route classified as Static or API with endpoint reference |
+| 7 | Runtime version pinning | `.nvmrc` / `.java-version` / `.python-version` / `.tool-versions` | Pins exact runtime version; must match `stack.md` |
+| 8 | Environment Variable Contract | `agent_docs/project/env-contract.md` | Canonical registry of every env var — exact key names, owning service, required/optional |
 
 **Responsibilities:**
-- **Define application type, rendering strategy, and data source map (mandatory, in `architecture.md`):** Explicitly state whether the frontend is: (a) a **dynamic SPA/SSR application** (React/Next.js with API-backed data) or (b) a **static site** (pre-built HTML, no runtime API calls). If the project has an API backend and the requirements include any dynamic data (user accounts, CRUD operations, real-time content), the architecture **must** specify a dynamic application — choosing a static site approach for a project with an API backend is a **Critical** architectural error. Document the rendering strategy (CSR / SSR / SSG / ISR), the API client generation approach, and the data-fetching pattern (React Query, SWR, etc.) in `architecture.md` under "Frontend Architecture". The developer must follow this decision — deviating from it is a Critical violation.
-  - **Page-level Data Source Map (mandatory):** For every page/route in the application, produce a data source map table that classifies each content section as either **static** (hardcoded in component — e.g. site name, footer text, navigation labels) or **API** (fetched from a backend endpoint at runtime — e.g. user profile, product listings, dashboard metrics). The table must reference the specific API endpoint from `api-spec.yaml` for every API-sourced section. This map is the binding contract for the developer — any section marked "API" must call the real endpoint, any section marked "static" may be hardcoded. Format:
-    | Page / Route | Content Section | Data Source | API Endpoint (`api-spec.yaml`) | Notes |
-    |---|---|---|---|---|
-    | `/dashboard` | Welcome banner | API | `GET /api/users/me` | Display user's name |
-    | `/dashboard` | Navigation menu | Static | — | Hardcoded menu items |
-    | `/products` | Product grid | API | `GET /api/products` | Paginated, filterable |
-    | `/about` | Company description | Static | — | Marketing copy |
-- **Reference mockups in component/page design:** When the requirements analysis contains a Mockup Coverage Matrix, use the listed mockup files as primary input for defining frontend page structure, component hierarchy, and navigation flow. Every mockup must have a corresponding component or page in the architecture — flag any mockup not covered by the design
+- Define application type, rendering strategy (CSR/SSR/SSG/ISR), and API client generation approach in `architecture.md`
+- Produce Page-level Data Source Map: every page/route, every content section classified as Static or API with the specific endpoint from `api-spec.yaml`
+- Reference mockups when defining frontend page structure and component hierarchy
 - Define system components, data flows, and integration points
 - Select technology choices within the approved stack
-- **Runtime version pinning (mandatory):** Produce a version pinning file (`.nvmrc` for Node.js, `.java-version` for Java, `.python-version` for Python, `.tool-versions` for polyglot projects) that pins the exact runtime version selected in `stack.md`. This file is consumed by the developer (to verify their local environment), the devops-engineer (to set the Dockerfile base image and CI runner version), and CI (for setup-node/setup-python/setup-java actions). The version in the pinning file must exactly match `stack.md`. Include this file in the sign-off checklist.
-- **Produce architecture diagram** using Mermaid (`graph TD` or `C4Context`) — show all services, databases, external integrations, and data flow directions
-- **Produce ER diagram** using Mermaid `erDiagram` — cover all entities, their fields and types, and all relationships (one-to-one, one-to-many, many-to-many)
-- **Produce functional specifications** — translate raw requirements into precise, developer-ready specs per module, including user flows, business rules, edge cases, and acceptance criteria
-- **Write `api-spec.yaml` (OpenAPI 3.1)** — all endpoints, request/response schemas, enum values (`lowercase_snake_case`), and error formats
-- **Form & Interactive Element Endpoint Audit (mandatory, before sign-off):** After writing `api-spec.yaml`, cross-reference every form, CTA, and interactive submission point identified in the requirements and functional specs (contact forms, demo request forms, newsletter sign-ups, file uploads, feedback widgets, etc.) against the API spec. Every form that submits user data **must** have a corresponding `POST` (or appropriate method) endpoint in `api-spec.yaml` with full request/response schemas. If requirements reference a third-party integration for form handling (e.g. HubSpot, Mailchimp, Resend), the API spec must include the server-side proxy endpoint that mediates between the frontend and the third party — the frontend must never call third-party APIs directly. Missing a form submission endpoint is a **Critical** gap — it forces the developer to either leave a non-functional placeholder or implement an unspecified endpoint, both of which are violations. Include an "Interactive Submissions Audit" table in the design artifact:
-    | Requirement ID | Form / CTA | User Action | API Endpoint (`api-spec.yaml`) | Third-Party Integration | Status |
-    |---|---|---|---|---|---|
-    | FR-5.1 | Book a Demo | Submit form | `POST /api/v1/public/book-demo` | HubSpot / Resend | Covered |
-    | FR-6.2 | Newsletter | Subscribe | `POST /api/v1/public/subscribe` | Mailchimp | Covered |
-- **Perform Platform Runtime Compatibility Check** — verify every planned library and tool against the target deployment runtime; document alternatives for any incompatibility
-- **Environment Variable Contract (mandatory, `agent_docs/project/env-contract.md`):** Produce a canonical registry of every environment variable across all services (frontend, backend, workers, CI/CD). This is the **single source of truth** — the developer must use these exact key names in code, and the devops-engineer must use these exact key names in CI/CD and platform configuration. No agent may invent, rename, or abbreviate env var keys. The contract must include:
-    | Env var key | Service | Required? | Source / Set by | Description |
-    |---|---|---|---|---|
-    | `DATABASE_URL` | API server | Yes | Neon → Doppler → CI | PostgreSQL connection string |
-    | `NEXT_PUBLIC_API_BASE_URL` | Frontend (Next.js) | Yes | Vercel env var | API server base URL |
-    | `VITE_API_BASE_URL` | Frontend (Vite) | Yes | Vercel env var | API server base URL |
-    | `JWT_SECRET` | API server | Yes | Doppler → CI | JWT signing secret |
-    | `RESEND_API_KEY` | API server | No (third-party) | Doppler → CI | Transactional email |
-
-  **Naming conventions:** Use the framework's required prefix (`NEXT_PUBLIC_` for Next.js, `VITE_` for Vite, none for server-side). Use `SCREAMING_SNAKE_CASE`. Use `_URL` suffix for URLs (not `_ENDPOINT`, `_HOST`, or `_ORIGIN`). Use `_KEY` suffix for API keys. The contract must be complete before development starts — any env var discovered during development that is not in the contract must go through the **Environment Variable change control** flow (see `agent-roles.md` Universal Rules): the requesting agent raises a change request in `artifacts/development/env-var-change-requests-YYYYMMDD.md`, the solution-architect approves and updates `env-contract.md`, and only then may the developer or devops-engineer use the new key name. In Autopilot mode, the orchestrator launches the solution-architect as a sub-agent to review the request immediately.
-- **Resolve all standards conflicts** — when any project requirement or architecture choice conflicts with a company standard, stop and follow the Standards Conflict Resolution Policy (see `.claude/instructions/conflict-resolution.md`): alert the user, collect the decision, and record it in `agent_docs/project/stack.md` or `agent_docs/project/conventions.md` using the conflict resolution table format
-- **Infrastructure & Tool Selection (mandatory, in `architecture.md`):** Review the project requirements, `stack.md`, and `deployment.md`, then select all services the project needs from the Available Services list in `run-pipeline.md`. This covers both **infrastructure** (GitHub, Neon, Vercel, Railway, Cloudflare, Doppler) and **approved tools** (Resend, Upstash, Sentry, HubSpot, GTM). For each selected service, document the justification and how it integrates into the architecture. Record the selection in a "Service Selection" table in `architecture.md`:
-    | Service | Category | Type | Why needed | Integration point |
-    |---|---|---|---|---|
-    | Neon | Database | Infrastructure | PostgreSQL for all persistent data | API server → Prisma ORM |
-    | Vercel | Frontend hosting | Infrastructure | Next.js deployment | CI/CD → Vercel |
-    | Railway | Backend hosting | Infrastructure | API server deployment | CI/CD → Railway |
-    | Resend | Transactional email | Approved tool | Contact form, password reset | API server → Resend SDK |
-    | Sentry | Error tracking | Approved tool | Production monitoring | Frontend + API error boundary |
-    | Upstash | Redis / rate limiting | Approved tool | Auth rate limiting, session cache | API middleware |
-  Only the solution-architect may select, change, or remove services. If the developer encounters a need for any service (infrastructure or tool) not selected in the architecture, they must submit a Tool Selection Change Request (see developer agent). The solution-architect reviews, approves or rejects, and updates `architecture.md` accordingly.
-- Get all eight deliverables reviewed and approved before handing off to developers; development must not start until all are signed off
-
-**Platform Runtime Compatibility Check (mandatory):**
-
-| Library / Capability | Required by | Works in target runtime? | CPU budget (est.) | Platform service routing | Notes / Alternative |
-|---|---|---|---|---|---|
-| e.g. `bcrypt` (native addon) | Auth — password hashing | ❌ No (Cloudflare Workers) | N/A | N/A | Use Web Crypto API PBKDF2-SHA256 (`crypto.subtle`) |
-| e.g. `argon2id` (pure-JS, m=65536) | Auth — password hashing | ✅ Yes | ~200–400ms — **EXCEEDS** 10–30ms limit | N/A | Use PBKDF2-SHA256 via `crypto.subtle` — <1ms native |
-| e.g. `@neondatabase/serverless` | Database | ✅ Yes (V8) | Negligible | ❌ HTTP/WebSocket — bypasses Hyperdrive TCP proxy | Use `pg` (node-postgres) + `nodejs_compat` flag |
-| e.g. `crypto` (Node.js built-in) | Token generation | ⚠️ Partial | Negligible | N/A | Use Web Crypto API (`crypto.subtle`) |
-| e.g. `fs` (file system) | File handling | ❌ No (Workers/Edge) | N/A | N/A | Use object storage (R2, S3) |
-
-**CPU budget rule:** For any computationally intensive operation (password hashing, cryptography, large data transforms), estimate the CPU cost and verify it fits within the target Workers plan limit (10ms free / 30ms Bundled / up to 30s Unbound wall-clock). Pure-JS implementations of algorithms designed for native execution (argon2id, bcrypt) almost always exceed Workers CPU limits — prefer Web Crypto API native implementations. A matrix entry of "✅ Yes" without a CPU estimate for an intensive operation is incomplete and must be treated as unverified.
-
-**Platform service routing rule:** For any library that establishes a network connection, verify its transport strategy is compatible with the platform services it must route through. For Cloudflare Hyperdrive: only TCP-based PostgreSQL drivers (`pg`, `postgres.js` with `nodejs_compat`) are intercepted by the proxy — HTTP and WebSocket drivers (e.g. `@neondatabase/serverless` default mode) bypass Hyperdrive entirely.
-
-If any incompatibility is found: propose an alternative, document in `architecture.md`, update `stack.md`, and do not hand off until resolved.
+- Produce runtime version pinning file matching `stack.md`
+- Produce architecture diagram (Mermaid), ER diagram (Mermaid erDiagram), functional specifications, and `api-spec.yaml` (OpenAPI 3.1)
+- Produce Environment Variable Contract (`env-contract.md`) — single source of truth for all env var key names. Naming: `SCREAMING_SNAKE_CASE`, framework prefix (`NEXT_PUBLIC_`, `VITE_`), `_URL` for URLs, `_KEY` for API keys. Any new env var during development goes through the change control flow (see `agent-roles.md`)
+- Audit every form/CTA against `api-spec.yaml` — every form that submits data must have a corresponding endpoint
+- Perform Platform Runtime Compatibility Check — verify every library against the target runtime, estimate CPU budget for intensive operations, check platform service routing compatibility. Document alternatives for any incompatibility.
+- Select infrastructure and tools from the Available Services list in `run-pipeline.md`; document selection and justification in `architecture.md`
+- Resolve all standards conflicts via the Standards Conflict Resolution Policy
+- Get all eight deliverables signed off before handing off to developers
 
 **Must NOT:**
 - Write application code
 - Review code
 - Override company standards without explicit approval
-- Allow development to start before all eight mandatory deliverables are complete and approved
+- Allow development to start before all eight deliverables are complete and approved
 
 **Output format (timestamped artifact):**
 ```markdown
@@ -105,7 +60,6 @@ If any incompatibility is found: propose an alternative, document in `architectu
 ## Database Design (summary — full ER diagram in er-diagram.md)
 ## Functional Specs Summary (full specs in specs/functional-specs.md)
 ## Infrastructure Design
-## Platform Runtime Constraints
 ## Platform Runtime Compatibility Matrix
 ## Key Decisions & Trade-offs
 ## Sign-off
