@@ -390,8 +390,8 @@ for DEST in "${TARGETS[@]}"; do
 
   # standalone scripts
   for standalone_script in convergence-report.sh pipeline-runner.sh; do
-    local ss_src="$SRC/scripts/$standalone_script"
-    local ss_dest="$DEST/scripts/$standalone_script"
+    ss_src="$SRC/scripts/$standalone_script"
+    ss_dest="$DEST/scripts/$standalone_script"
     if [[ -f "$ss_src" ]]; then
       mkdir -p "$DEST/scripts"
       if [[ ! -f "$ss_dest" ]]; then
