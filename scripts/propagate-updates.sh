@@ -366,25 +366,27 @@ for DEST in "${TARGETS[@]}"; do
     done
   fi
 
-  # pipeline-run.json template (ADD ONLY)
-  RUN_TEMPLATE_SRC="$SRC/agent_docs/templates/pipeline-run.json"
-  RUN_TEMPLATE_DEST="$DEST/agent_docs/templates/pipeline-run.json"
-  if [[ -f "$RUN_TEMPLATE_SRC" ]]; then
-    mkdir -p "$DEST/agent_docs/templates"
-    if [[ ! -f "$RUN_TEMPLATE_DEST" ]]; then
-      cp "$RUN_TEMPLATE_SRC" "$RUN_TEMPLATE_DEST"
-      echo -e "    ${GREEN}+  Added:${NC} agent_docs/templates/pipeline-run.json"
-      ((ADDED++))
-    else
-      if ! diff -q "$RUN_TEMPLATE_SRC" "$RUN_TEMPLATE_DEST" > /dev/null 2>&1; then
-        cp "$RUN_TEMPLATE_SRC" "$RUN_TEMPLATE_DEST"
-        echo -e "    ${GREEN}↺  Updated:${NC} agent_docs/templates/pipeline-run.json"
-        ((OVERWRITTEN++))
+  # pipeline templates (OVERWRITE — these are Genesis-owned templates)
+  mkdir -p "$DEST/agent_docs/templates"
+  for tmpl_file in pipeline-run.json pipeline-log.md; do
+    TMPL_SRC="$SRC/agent_docs/templates/$tmpl_file"
+    TMPL_DEST="$DEST/agent_docs/templates/$tmpl_file"
+    if [[ -f "$TMPL_SRC" ]]; then
+      if [[ ! -f "$TMPL_DEST" ]]; then
+        cp "$TMPL_SRC" "$TMPL_DEST"
+        echo -e "    ${GREEN}+  Added:${NC} agent_docs/templates/$tmpl_file"
+        ((ADDED++))
       else
-        echo -e "    —  No change: agent_docs/templates/pipeline-run.json"
+        if ! diff -q "$TMPL_SRC" "$TMPL_DEST" > /dev/null 2>&1; then
+          cp "$TMPL_SRC" "$TMPL_DEST"
+          echo -e "    ${GREEN}↺  Updated:${NC} agent_docs/templates/$tmpl_file"
+          ((OVERWRITTEN++))
+        else
+          echo -e "    —  No change: agent_docs/templates/$tmpl_file"
+        fi
       fi
     fi
-  fi
+  done
 
   # convergence-report.sh
   CONV_SRC="$SRC/scripts/convergence-report.sh"

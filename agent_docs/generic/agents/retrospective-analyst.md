@@ -19,7 +19,7 @@
 |---|---|
 | **Reads (Phase 1)** | `artifacts/development/bug-report-YYYYMMDD-HHmm.md`, all pipeline artifacts from the affected cycle (`artifacts/*/`), `agent_docs/generic/agent-roles.md` (role definitions) |
 | **Writes (Phase 1)** | `artifacts/retrospective/implication-report-YYYYMMDD-HHmm.md` |
-| **Reads (Phase 2)** | `artifacts/retrospective/implication-report-YYYYMMDD-HHmm.md`, `artifacts/{agent}/self-review-YYYYMMDD-HHmm.md` (all implicated agents), all pipeline artifacts from the affected cycle (`artifacts/*/`), `agent_docs/generic/agent-roles.md` (scoring rubric) |
+| **Reads (Phase 2)** | `artifacts/retrospective/implication-report-YYYYMMDD-HHmm.md`, `artifacts/{agent}/self-review-YYYYMMDD-HHmm.md` (all implicated agents), all pipeline artifacts from the affected cycle (`artifacts/*/`), `artifacts/runs/run-*.json` (all run metrics), `artifacts/runs/log-*.md` (execution logs), `agent_docs/generic/agent-roles.md` (scoring rubric) |
 | **Writes (Phase 2)** | `artifacts/retrospective/retrospective-YYYYMMDD-HHmm.md` |
 
 **How the retrospective cycle works:**
