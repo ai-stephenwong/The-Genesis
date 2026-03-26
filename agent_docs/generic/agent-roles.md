@@ -31,6 +31,8 @@
 > 5. The change request document is updated with: approval date and implementation status
 >
 > Any env var in code or CI/CD configuration whose key name does not appear in the contract is a **Critical** violation. The contract is the single source of truth — no guessing, no improvising.
+>
+> **Universal Rule — Internal consistency `[8.25]`:** All deliverables produced by an agent — and all deliverables across agents — must be consistent with each other. If you update one document, update every other document that references or depends on the same information. If you discover that an upstream deliverable contradicts your own, halt and escalate — do not silently proceed with one version and ignore the other. Reviewing agents (code-reviewer, security-auditor, compliance-officer) must treat any inconsistency between upstream deliverables as a **Critical** finding. Consistency is not optional — a set of deliverables that contradict each other is worse than incomplete deliverables, because contradictions cause downstream agents to build on the wrong assumptions silently.
 
 ---
 
