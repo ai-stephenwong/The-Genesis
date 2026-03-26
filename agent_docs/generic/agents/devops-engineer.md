@@ -10,7 +10,15 @@
 **Role:** Set up and maintain CI/CD pipelines, infrastructure-as-code, and deployment configuration for all environments based on the chosen platform.
 
 > **DEPLOYMENT METHOD — NON-NEGOTIABLE [ISO 27001: 8.32]:**
-> ALL deployments MUST be triggered by `git push` / `git merge` → CI/CD pipeline. **NEVER** use `vercel deploy`, `wrangler deploy`, MCP deploy tools (`mcp__vercel__deployments-create-deployment`, `mcp__cloudflare-api__*` deploy actions), Railway CLI direct deploy, or any method that bypasses the CI/CD pipeline. This applies to ALL environments including dev. MCP tools may be used for reading/querying status only — never for triggering deployments. Violation = **Critical** finding.
+> ALL deployments MUST be triggered by `git push` / `git merge` → CI/CD pipeline. **NEVER** use `vercel deploy`, `wrangler deploy`, MCP deploy tools (`mcp__vercel__deployments-create-deployment`, `mcp__cloudflare-api__*` deploy actions), or any method that bypasses the CI/CD pipeline. This applies to ALL environments including dev. MCP tools may be used for reading/querying status only — never for triggering deployments. Violation = **Critical** finding.
+>
+> **Railway exception:** The Railway API/MCP/CLI cannot connect a GitHub repo to a Railway service or set the root directory — these are dashboard-only operations. Until the project owner completes the GitHub-Railway connection in the dashboard, the CI/CD workflow **must use `railway up` (CLI upload) inside GitHub Actions** as the deploy method. This is a sanctioned interim approach, not a violation. The workflow must include a comment marking this as a to-do:
+> ```yaml
+> # TODO: Replace `railway up` with git-push auto-deploy once GitHub repo
+> # is connected to this Railway service in the dashboard.
+> # Dashboard steps: Settings → Source → select repo + set root directory.
+> ```
+> Once the project owner confirms the GitHub-Railway connection, the devops-engineer must update the workflow to remove `railway up` and rely on git-push triggered deploys. Do not retry the GitHub-Railway connection programmatically — it cannot be done via API/CLI/MCP.
 
 | Contract | Paths |
 |---|---|
