@@ -388,27 +388,29 @@ for DEST in "${TARGETS[@]}"; do
     fi
   done
 
-  # convergence-report.sh
-  CONV_SRC="$SRC/scripts/convergence-report.sh"
-  CONV_DEST="$DEST/scripts/convergence-report.sh"
-  if [[ -f "$CONV_SRC" ]]; then
-    mkdir -p "$DEST/scripts"
-    if [[ ! -f "$CONV_DEST" ]]; then
-      cp "$CONV_SRC" "$CONV_DEST"
-      chmod +x "$CONV_DEST"
-      echo -e "    ${GREEN}+  Added:${NC} scripts/convergence-report.sh"
-      ((ADDED++))
-    else
-      if ! diff -q "$CONV_SRC" "$CONV_DEST" > /dev/null 2>&1; then
-        cp "$CONV_SRC" "$CONV_DEST"
-        chmod +x "$CONV_DEST"
-        echo -e "    ${GREEN}↺  Updated:${NC} scripts/convergence-report.sh"
-        ((OVERWRITTEN++))
+  # standalone scripts
+  for standalone_script in convergence-report.sh pipeline-runner.sh; do
+    local ss_src="$SRC/scripts/$standalone_script"
+    local ss_dest="$DEST/scripts/$standalone_script"
+    if [[ -f "$ss_src" ]]; then
+      mkdir -p "$DEST/scripts"
+      if [[ ! -f "$ss_dest" ]]; then
+        cp "$ss_src" "$ss_dest"
+        chmod +x "$ss_dest"
+        echo -e "    ${GREEN}+  Added:${NC} scripts/$standalone_script"
+        ((ADDED++))
       else
-        echo -e "    —  No change: scripts/convergence-report.sh"
+        if ! diff -q "$ss_src" "$ss_dest" > /dev/null 2>&1; then
+          cp "$ss_src" "$ss_dest"
+          chmod +x "$ss_dest"
+          echo -e "    ${GREEN}↺  Updated:${NC} scripts/$standalone_script"
+          ((OVERWRITTEN++))
+        else
+          echo -e "    —  No change: scripts/$standalone_script"
+        fi
       fi
     fi
-  fi
+  done
 
   # artifacts subfolders
   for artifact_dir in requirements architecture development code-review uiux-review test security devops compliance runs; do
