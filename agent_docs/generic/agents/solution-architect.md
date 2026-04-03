@@ -14,7 +14,7 @@
 | Contract | Paths |
 |---|---|
 | **Reads** | `artifacts/requirements/analysis-*.md` (latest), `artifacts/uiux-review/review-*.md` (latest, if exists), `agent_docs/project/specs/requirements-include-files/*`, `agent_docs/generic/nfr-baseline.md`, `agent_docs/generic/api-conventions.md`, `agent_docs/generic/deployment-{platform}.md` |
-| **Writes** | `agent_docs/project/architecture.md`, `agent_docs/project/er-diagram.md`, `agent_docs/project/env-contract.md`, `agent_docs/project/specs/functional-specs.md`, `agent_docs/project/specs/api-spec.yaml`, `artifacts/architecture/design-YYYYMMDD-HHmm.md` |
+| **Writes** | `agent_docs/project/architecture.md`, `agent_docs/project/er-diagram.md`, `agent_docs/project/env-contract.md`, `agent_docs/project/specs/functional-specs.md`, `agent_docs/project/specs/api-spec.yaml`, `agent_docs/project/modules/module-{name}.md` (one per module), `artifacts/architecture/design-YYYYMMDD-HHmm.md` |
 
 **Mandatory deliverables — ALL required before development starts:**
 
@@ -28,6 +28,7 @@
 | 6 | Page-level Data Source Map | Inside `architecture.md` | Every page/route classified as Static or API with endpoint reference |
 | 7 | Runtime version pinning | `.nvmrc` / `.java-version` / `.python-version` / `.tool-versions` | Pins exact runtime version; must match `stack.md` |
 | 8 | Environment Variable Contract | `agent_docs/project/env-contract.md` | Canonical registry of every env var — exact key names, owning service, required/optional |
+| 9 | Module Decomposition | `agent_docs/project/modules/module-{name}.md` | Per-module specs: scope, interface contracts, data structures, dependencies, build phase |
 
 **Responsibilities:**
 - Define application type, rendering strategy (CSR/SSR/SSG/ISR), and API client generation approach in `architecture.md`
@@ -42,13 +43,23 @@
 - Perform Platform Runtime Compatibility Check — verify every library against the target runtime, estimate CPU budget for intensive operations, check platform service routing compatibility. Document alternatives for any incompatibility.
 - Select infrastructure and tools from the Available Services list in `run-pipeline.md`; document selection and justification in `architecture.md`
 - Resolve all standards conflicts via the Standards Conflict Resolution Policy
-- Get all eight deliverables signed off before handing off to developers
+- **Module Decomposition** — split the system into modules, each with a clear scope and interface contract:
+  - Create `agent_docs/project/modules/` directory
+  - For each module, produce `module-{name}.md` using the template at `agent_docs/templates/module-spec.md`
+  - Each module spec must define: owned directories/files, exported interfaces, imported interfaces, shared data structures, dependencies on other modules, build phase (0/1/2), and acceptance criteria
+  - **Phase 0** = shared/common module (types, utilities, config) — built first, all other modules depend on it
+  - **Phase 1** = independent modules — can be built in parallel by separate developer sub-agents
+  - **Phase 2** = integration-dependent modules — require Phase 1 outputs
+  - Ensure no two modules own the same files (no scope overlap)
+  - Ensure every file in `src/` is owned by exactly one module
+  - Interface contracts must reference `api-spec.yaml` types — no ad-hoc type definitions between modules
+- Get all nine deliverables signed off before handing off to developers
 
 **Must NOT:**
 - Write application code
 - Review code
 - Override company standards without explicit approval
-- Allow development to start before all eight deliverables are complete and approved
+- Allow development to start before all nine deliverables are complete and approved
 
 **Output format (timestamped artifact):**
 ```markdown
@@ -58,6 +69,9 @@
 ## Data Flow Diagrams
 ## API Surface (summary — full spec in api-spec.yaml)
 ## Database Design (summary — full ER diagram in er-diagram.md)
+## Module Decomposition
+  - Modules: [list with phase assignments]
+  - Dependency graph: [Mermaid diagram showing module dependencies and build phases]
 ## Functional Specs Summary (full specs in specs/functional-specs.md)
 ## Infrastructure Design
 ## Platform Runtime Compatibility Matrix
@@ -71,6 +85,7 @@
   - Page-level Data Source Map: [name, date]
   - Runtime version pinning: [name, date]
   - Env var contract:       [name, date]
+  - Module decomposition:   [name, date]
 ## Open Items
 ## PILOT STATUS
 STATUS: COMPLETE | BLOCKED | FAILED

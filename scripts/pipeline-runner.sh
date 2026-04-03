@@ -337,22 +337,74 @@ run_validation() {
   return $exit_code
 }
 
+# ─── Module discovery ────────────────────────────────────────────────────────
+# Check if module decomposition is active and return module list by phase
+
+discover_modules() {
+  local modules_dir="$PROJECT/agent_docs/project/modules"
+  if [[ ! -d "$modules_dir" ]]; then
+    echo ""
+    return
+  fi
+
+  local module_files
+  module_files=$(ls "$modules_dir"/module-*.md 2>/dev/null)
+  if [[ -z "$module_files" ]]; then
+    echo ""
+    return
+  fi
+
+  echo "$module_files"
+}
+
+# Get modules for a specific phase (0, 1, or 2)
+get_modules_by_phase() {
+  local phase="$1"
+  local modules_dir="$PROJECT/agent_docs/project/modules"
+  local result=()
+
+  for f in "$modules_dir"/module-*.md; do
+    [[ ! -f "$f" ]] && continue
+    # Extract phase from the module spec (line: **Phase:** N)
+    local mod_phase
+    mod_phase=$(grep -oP '\*\*Phase:\*\*\s*\K\d+' "$f" 2>/dev/null || echo "1")
+    if [[ "$mod_phase" == "$phase" ]]; then
+      # Extract module name from filename: module-{name}.md → {name}
+      local mod_name
+      mod_name=$(basename "$f" .md | sed 's/^module-//')
+      result+=("$mod_name")
+    fi
+  done
+
+  echo "${result[*]:-}"
+}
+
 # ─── Run a single stage ──────────────────────────────────────────────────────
 
 run_stage() {
   local json_file="$1"
   local stage="$2"
+  local module_name="${3:-}"  # optional: module scope for developer sub-agents
 
   log ""
   log "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
-  log "${BOLD}Stage: ${CYAN}${stage}${NC}"
+  if [[ -n "$module_name" ]]; then
+    log "${BOLD}Stage: ${CYAN}${stage}${NC} ${YELLOW}[module: ${module_name}]${NC}"
+  else
+    log "${BOLD}Stage: ${CYAN}${stage}${NC}"
+  fi
   log "${BOLD}Time:${NC}  $(timestamp)"
   log ""
 
+  local state_key="$stage"
+  if [[ -n "$module_name" ]]; then
+    state_key="${stage}.modules.$module_name"
+  fi
+
   # Update state: running
-  state_set "$json_file" "stages.$stage.status" "running"
-  state_set "$json_file" "stages.$stage.started" "$(timestamp)"
-  log_event "STAGE-START" "$stage" "Agent invoked"
+  state_set "$json_file" "stages.$state_key.status" "running"
+  state_set "$json_file" "stages.$state_key.started" "$(timestamp)"
+  log_event "STAGE-START" "$stage${module_name:+ ($module_name)}" "Agent invoked"
 
   # Invoke Claude Code for this stage
   local start_seconds
@@ -361,42 +413,126 @@ run_stage() {
   log "  ${BOLD}Invoking Claude Code...${NC}"
 
   local claude_exit=0
-  claude --print -p "run agent $stage" --cwd "$PROJECT" 2>&1 || claude_exit=$?
+  local prompt_text="run agent $stage"
+  if [[ -n "$module_name" ]]; then
+    prompt_text="run agent $stage for module $module_name — read agent_docs/project/modules/module-${module_name}.md for scope and interface contracts. Only write code within the module's owned directories."
+  fi
+
+  claude --print --dangerously-skip-permissions -p "$prompt_text" --cwd "$PROJECT" 2>&1 || claude_exit=$?
 
   local end_seconds
   end_seconds=$(date +%s)
   local duration=$((end_seconds - start_seconds))
 
-  state_set "$json_file" "stages.$stage.completed" "$(timestamp)"
-  state_set "$json_file" "stages.$stage.process_time_seconds" "$duration"
+  state_set "$json_file" "stages.$state_key.completed" "$(timestamp)"
+  state_set "$json_file" "stages.$state_key.process_time_seconds" "$duration"
 
   if [[ $claude_exit -ne 0 ]]; then
     log "  ${RED}✗  Claude Code exited with code $claude_exit${NC}"
-    state_set "$json_file" "stages.$stage.status" "failed"
-    log_event "STAGE-FAILED" "$stage" "Claude Code exit code: $claude_exit (${duration}s)"
+    state_set "$json_file" "stages.$state_key.status" "failed"
+    log_event "STAGE-FAILED" "$stage${module_name:+ ($module_name)}" "Claude Code exit code: $claude_exit (${duration}s)"
     update_totals "$json_file"
     return 1
   fi
 
-  # Run validation
-  local val_exit=0
-  run_validation "$json_file" "$stage" || val_exit=$?
+  # Run validation (only for non-module stages or after all modules complete)
+  if [[ -z "$module_name" ]]; then
+    local val_exit=0
+    run_validation "$json_file" "$stage" || val_exit=$?
 
-  if [[ $val_exit -ne 0 ]]; then
-    log "  ${YELLOW}Stage $stage completed but validation failed${NC}"
-    state_set "$json_file" "stages.$stage.status" "failed"
-    log_event "STAGE-FAILED" "$stage" "Validation failed after ${duration}s"
-    update_totals "$json_file"
-    return 1
+    if [[ $val_exit -ne 0 ]]; then
+      log "  ${YELLOW}Stage $stage completed but validation failed${NC}"
+      state_set "$json_file" "stages.$state_key.status" "failed"
+      log_event "STAGE-FAILED" "$stage" "Validation failed after ${duration}s"
+      update_totals "$json_file"
+      return 1
+    fi
   fi
 
   # Success
-  state_set "$json_file" "stages.$stage.status" "complete"
-  log_event "STAGE-COMPLETE" "$stage" "Completed successfully in ${duration}s"
+  state_set "$json_file" "stages.$state_key.status" "complete"
+  log_event "STAGE-COMPLETE" "$stage${module_name:+ ($module_name)}" "Completed successfully in ${duration}s"
   update_totals "$json_file"
 
   log ""
-  log "  ${GREEN}✓  $stage complete (${duration}s)${NC}"
+  log "  ${GREEN}✓  $stage${module_name:+ ($module_name)} complete (${duration}s)${NC}"
+  return 0
+}
+
+# ─── Run developer stage with module decomposition ───────────────────────────
+
+run_developer_modules() {
+  local json_file="$1"
+
+  local modules
+  modules=$(discover_modules)
+  if [[ -z "$modules" ]]; then
+    # No modules — run developer as a single stage
+    run_stage "$json_file" "developer"
+    return $?
+  fi
+
+  log ""
+  log "${BOLD}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
+  log "${BOLD}Module decomposition active${NC}"
+
+  # Phase 0 — shared/common modules (sequential)
+  local phase0_modules
+  phase0_modules=$(get_modules_by_phase "0")
+  if [[ -n "$phase0_modules" ]]; then
+    log "${BOLD}Phase 0 — shared/common modules:${NC} $phase0_modules"
+    for mod in $phase0_modules; do
+      run_stage "$json_file" "developer" "$mod" || return 1
+    done
+  fi
+
+  # Phase 1 — independent modules (parallel — sequential for now, see TODO)
+  local phase1_modules
+  phase1_modules=$(get_modules_by_phase "1")
+  if [[ -n "$phase1_modules" ]]; then
+    log ""
+    log "${BOLD}Phase 1 — independent modules (parallel):${NC} $phase1_modules"
+    for mod in $phase1_modules; do
+      run_stage "$json_file" "developer" "$mod" || true
+    done
+  fi
+
+  # Phase 2 — integration-dependent modules
+  local phase2_modules
+  phase2_modules=$(get_modules_by_phase "2")
+  if [[ -n "$phase2_modules" ]]; then
+    log ""
+    log "${BOLD}Phase 2 — integration modules:${NC} $phase2_modules"
+    for mod in $phase2_modules; do
+      run_stage "$json_file" "developer" "$mod" || true
+    done
+  fi
+
+  # Integration verification — full project build
+  log ""
+  log "${BOLD}Integration verification — full build...${NC}"
+  local int_exit=0
+  claude --print --dangerously-skip-permissions -p "Run full project build to verify module integration. Check for: type errors across module boundaries, missing exports, circular dependencies. Fix any issues found." --cwd "$PROJECT" 2>&1 || int_exit=$?
+
+  if [[ $int_exit -ne 0 ]]; then
+    log "  ${RED}✗  Integration verification failed${NC}"
+    log_event "VALIDATION" "developer (integration)" "Integration build failed"
+    state_set "$json_file" "stages.developer.status" "failed"
+    return 1
+  fi
+
+  # Run post-developer validation
+  local val_exit=0
+  run_validation "$json_file" "developer" || val_exit=$?
+
+  if [[ $val_exit -ne 0 ]]; then
+    state_set "$json_file" "stages.developer.status" "failed"
+    return 1
+  fi
+
+  state_set "$json_file" "stages.developer.status" "complete"
+  log_event "STAGE-COMPLETE" "developer" "All modules complete + integration verified"
+  log "  ${GREEN}✓  All developer modules complete${NC}"
   return 0
 }
 
@@ -625,10 +761,18 @@ main() {
       # (true parallel would need background processes + wait)
       # TODO: implement true parallel with background processes
       for stage in "${STAGES_TO_RUN[@]}"; do
-        run_stage "$json_file" "$stage" || true
+        if [[ "$stage" == "developer" ]]; then
+          run_developer_modules "$json_file" || true
+        else
+          run_stage "$json_file" "$stage" || true
+        fi
       done
     else
-      run_stage "$json_file" "${STAGES_TO_RUN[0]}" || true
+      if [[ "${STAGES_TO_RUN[0]}" == "developer" ]]; then
+        run_developer_modules "$json_file" || true
+      else
+        run_stage "$json_file" "${STAGES_TO_RUN[0]}" || true
+      fi
     fi
 
     show_status "$json_file"

@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Genesis — Pipeline Flow Reference</title>
+<style>
+  :root {
+    --bg: #0d1117;
+    --surface: #161b22;
+    --surface2: #1c2333;
+    --border: #30363d;
+    --text: #e6edf3;
+    --text-muted: #8b949e;
+    --accent: #58a6ff;
+    --green: #3fb950;
+    --orange: #d29922;
+    --red: #f85149;
+    --purple: #bc8cff;
+    --cyan: #39d2c0;
+    --pink: #f778ba;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    padding: 2rem;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 0.5rem;
+    background: linear-gradient(135deg, var(--accent), var(--purple));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  h1 .subtitle {
+    display: block;
+    font-size: 0.9rem;
+    font-weight: 400;
+    -webkit-text-fill-color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+
+  h2 {
+    font-size: 1.4rem;
+    color: var(--accent);
+    margin: 3rem 0 1.5rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  h3 {
+    font-size: 1.1rem;
+    color: var(--text);
+    margin: 1.5rem 0 0.75rem;
+  }
+
+  p, li { color: var(--text); margin-bottom: 0.5rem; }
+
+  /* Pipeline flow */
+  .pipeline {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+    margin: 2rem 0;
+  }
+
+  .stage-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1rem 1.5rem;
+    width: 280px;
+    text-align: center;
+    position: relative;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+
+  .stage-card:hover {
+    border-color: var(--accent);
+    box-shadow: 0 0 20px rgba(88, 166, 255, 0.1);
+  }
+
+  .stage-card .stage-num {
+    position: absolute;
+    top: -10px;
+    left: -10px;
+    background: var(--accent);
+    color: var(--bg);
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    font-weight: 700;
+  }
+
+  .stage-card .stage-name {
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--text);
+  }
+
+  .stage-card .stage-role {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+  }
+
+  .stage-card.gate { border-color: var(--orange); }
+  .stage-card.gate .stage-num { background: var(--orange); }
+
+  .stage-card.human-gate { border-color: var(--red); }
+  .stage-card.human-gate .stage-num { background: var(--red); }
+
+  .stage-card.preflight {
+    border-color: var(--purple);
+    border-style: dashed;
+    width: 320px;
+  }
+  .stage-card.preflight .stage-num { background: var(--purple); }
+
+  .connector {
+    width: 2px;
+    height: 28px;
+    background: var(--border);
+  }
+
+  .connector.short { height: 16px; }
+
+  .parallel-group {
+    background: var(--surface2);
+    border: 1px dashed var(--border);
+    border-radius: 16px;
+    padding: 1.25rem;
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+
+  .parallel-group .group-label {
+    position: absolute;
+    top: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--surface2);
+    padding: 0 0.75rem;
+    font-size: 0.7rem;
+    color: var(--cyan);
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    font-weight: 600;
+  }
+
+  .parallel-group .stage-card {
+    width: 200px;
+  }
+
+  .sync-barrier {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.4rem 1rem;
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    text-align: center;
+  }
+
+  .gate-badge {
+    display: inline-block;
+    font-size: 0.65rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 10px;
+    margin-top: 0.4rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .gate-badge.auto { background: rgba(210, 153, 34, 0.15); color: var(--orange); border: 1px solid rgba(210, 153, 34, 0.3); }
+  .gate-badge.human { background: rgba(248, 81, 73, 0.15); color: var(--red); border: 1px solid rgba(248, 81, 73, 0.3); }
+  .gate-badge.quality { background: rgba(63, 185, 80, 0.15); color: var(--green); border: 1px solid rgba(63, 185, 80, 0.3); }
+  .gate-badge.validation { background: rgba(188, 140, 255, 0.15); color: var(--purple); border: 1px solid rgba(188, 140, 255, 0.3); }
+
+  /* Stage detail cards */
+  .detail-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.25rem;
+    margin: 1.5rem 0;
+  }
+
+  @media (max-width: 768px) {
+    .detail-grid { grid-template-columns: 1fr; }
+  }
+
+  .detail-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    border-left: 3px solid var(--accent);
+  }
+
+  .detail-card h4 {
+    color: var(--accent);
+    margin-bottom: 0.75rem;
+    font-size: 0.95rem;
+  }
+
+  .detail-card .field {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .detail-card .field-label {
+    color: var(--text-muted);
+    min-width: 80px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+
+  .detail-card .field-value {
+    color: var(--text);
+    word-break: break-word;
+  }
+
+  .detail-card code {
+    background: var(--surface2);
+    padding: 0.1rem 0.35rem;
+    border-radius: 4px;
+    font-size: 0.8rem;
+    color: var(--cyan);
+  }
+
+  /* Tables */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 1rem 0;
+    font-size: 0.85rem;
+  }
+
+  th {
+    background: var(--surface2);
+    color: var(--accent);
+    text-align: left;
+    padding: 0.6rem 0.75rem;
+    border: 1px solid var(--border);
+    font-weight: 600;
+  }
+
+  td {
+    padding: 0.5rem 0.75rem;
+    border: 1px solid var(--border);
+    vertical-align: top;
+  }
+
+  tr:nth-child(even) { background: rgba(22, 27, 34, 0.5); }
+
+  td code {
+    background: var(--surface2);
+    padding: 0.1rem 0.3rem;
+    border-radius: 3px;
+    font-size: 0.8rem;
+    color: var(--cyan);
+  }
+
+  /* Transition section */
+  .transition-flow {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+
+  .transition-step {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+    margin-bottom: 1rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .transition-step:last-child {
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+  }
+
+  .step-icon {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1rem;
+    flex-shrink: 0;
+    font-weight: 700;
+  }
+
+  .step-icon.guard { background: rgba(88, 166, 255, 0.15); color: var(--accent); }
+  .step-icon.run { background: rgba(63, 185, 80, 0.15); color: var(--green); }
+  .step-icon.validate { background: rgba(188, 140, 255, 0.15); color: var(--purple); }
+  .step-icon.state { background: rgba(57, 210, 192, 0.15); color: var(--cyan); }
+  .step-icon.decide { background: rgba(210, 153, 34, 0.15); color: var(--orange); }
+
+  .step-content h4 {
+    font-size: 0.9rem;
+    margin-bottom: 0.25rem;
+  }
+
+  .step-content p {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+
+  /* Remediation */
+  .remediation-chain {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin: 0.75rem 0;
+  }
+
+  .chain-step {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 0.35rem 0.75rem;
+    font-size: 0.8rem;
+    color: var(--text);
+  }
+
+  .chain-arrow {
+    color: var(--text-muted);
+    font-size: 0.9rem;
+  }
+
+  /* Closed loop */
+  .loop-diagram {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 2rem;
+    margin: 1.5rem 0;
+    text-align: center;
+  }
+
+  .loop-steps {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0;
+  }
+
+  .loop-step {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 0.75rem 1.5rem;
+    max-width: 400px;
+    width: 100%;
+  }
+
+  .loop-step .loop-title {
+    font-weight: 600;
+    color: var(--accent);
+    font-size: 0.9rem;
+  }
+
+  .loop-step .loop-desc {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+  }
+
+  .loop-connector {
+    width: 2px;
+    height: 20px;
+    background: var(--green);
+  }
+
+  .loop-return {
+    border: 2px dashed var(--green);
+    border-top: none;
+    width: 440px;
+    height: 40px;
+    border-radius: 0 0 20px 20px;
+    margin: 0 auto;
+    position: relative;
+  }
+
+  .loop-return-label {
+    position: absolute;
+    bottom: -8px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg);
+    padding: 0 0.5rem;
+    font-size: 0.75rem;
+    color: var(--green);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* Meta pipeline */
+  .meta-section {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-left: 3px solid var(--pink);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin: 1.5rem 0;
+  }
+
+  .meta-section h3 { color: var(--pink); }
+
+  /* Status badges */
+  .badge {
+    display: inline-block;
+    padding: 0.2rem 0.6rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+  }
+  .badge.converging { background: rgba(63, 185, 80, 0.15); color: var(--green); }
+  .badge.flat { background: rgba(210, 153, 34, 0.15); color: var(--orange); }
+  .badge.diverging { background: rgba(248, 81, 73, 0.15); color: var(--red); }
+
+  .section-divider {
+    border: none;
+    height: 1px;
+    background: var(--border);
+    margin: 3rem 0;
+  }
+
+  .footnote {
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 3rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--border);
+  }
+</style>
+</head>
+<body>
+
+<h1>The Genesis <span class="subtitle">Pipeline Flow Reference</span></h1>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>1. Pipeline Overview</h2>
+
+<div class="pipeline">
+
+  <div class="stage-card preflight">
+    <div class="stage-num">P</div>
+    <div class="stage-name">Requirements Gate</div>
+    <div class="stage-role">At least one real requirements file must exist</div>
+  </div>
+
+  <div class="connector"></div>
+
+  <div class="stage-card">
+    <div class="stage-num">1</div>
+    <div class="stage-name">requirements-analyst</div>
+    <div class="stage-role">Analyse &amp; structure requirements</div>
+    <span class="gate-badge auto">gate: requirements-sign-off</span>
+  </div>
+
+  <div class="connector"></div>
+
+  <div class="stage-card gate">
+    <div class="stage-num">2</div>
+    <div class="stage-name">solution-architect</div>
+    <div class="stage-role">8 mandatory deliverables</div>
+    <span class="gate-badge auto">gate: architecture-sign-off</span>
+    <span class="gate-badge validation">post-architect</span>
+  </div>
+
+  <div class="connector"></div>
+
+  <div class="parallel-group">
+    <span class="group-label">Parallel Group 1</span>
+    <div class="stage-card">
+      <div class="stage-num">3a</div>
+      <div class="stage-name">developer</div>
+      <div class="stage-role">Implement features</div>
+      <span class="gate-badge validation">post-developer</span>
+    </div>
+    <div class="stage-card">
+      <div class="stage-num">3b</div>
+      <div class="stage-name">devops-engineer</div>
+      <div class="stage-role">CI/CD &amp; infrastructure</div>
+      <span class="gate-badge validation">post-devops</span>
+    </div>
+  </div>
+
+  <div class="connector short"></div>
+  <div class="sync-barrier">sync barrier — both must complete</div>
+  <div class="connector short"></div>
+
+  <div class="parallel-group">
+    <span class="group-label">Parallel Group 2</span>
+    <div class="stage-card">
+      <div class="stage-num">4a</div>
+      <div class="stage-name">code-reviewer</div>
+      <div class="stage-role">Standards &amp; correctness</div>
+      <span class="gate-badge validation">pre-review</span>
+    </div>
+    <div class="stage-card">
+      <div class="stage-num">4b</div>
+      <div class="stage-name">tester</div>
+      <div class="stage-role">Verify requirements</div>
+    </div>
+    <div class="stage-card">
+      <div class="stage-num">4c</div>
+      <div class="stage-name">uiux-reviewer</div>
+      <div class="stage-role">Mockup fidelity</div>
+    </div>
+  </div>
+
+  <div class="connector short"></div>
+  <div class="sync-barrier">sync barrier — code-reviewer + tester must complete</div>
+  <div class="connector short"></div>
+
+  <div class="stage-card">
+    <div class="stage-num">5</div>
+    <div class="stage-name">security-auditor</div>
+    <div class="stage-role">OWASP Top 10 audit</div>
+    <span class="gate-badge auto">gate: security-audit</span>
+  </div>
+
+  <div class="connector"></div>
+
+  <div class="stage-card gate">
+    <div class="stage-num">6</div>
+    <div class="stage-name">compliance-officer</div>
+    <div class="stage-role">Final compliance report</div>
+    <span class="gate-badge quality">quality gate</span>
+    <span class="gate-badge validation">pre-compliance</span>
+  </div>
+
+  <div class="connector"></div>
+
+  <div class="stage-card human-gate">
+    <div class="stage-num">7</div>
+    <div class="stage-name">deploy-environment</div>
+    <div class="stage-role">Staging / UAT deployment</div>
+    <span class="gate-badge human">human approval</span>
+  </div>
+
+  <div class="connector"></div>
+
+  <div class="stage-card human-gate">
+    <div class="stage-num">8</div>
+    <div class="stage-name">deploy-production</div>
+    <div class="stage-role">Production go-live</div>
+    <span class="gate-badge human">human approval</span>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>2. Per-Stage Detail</h2>
+
+<div class="detail-grid">
+
+  <div class="detail-card">
+    <h4>1 — requirements-analyst</h4>
+    <div class="field"><span class="field-label">Inputs</span><span class="field-value"><code>requirements-include-files/*</code> (.md, .html, .png, .pdf)</span></div>
+    <div class="field"><span class="field-label">Outputs</span><span class="field-value"><code>artifacts/requirements/analysis-*.md</code></span></div>
+    <div class="field"><span class="field-label">Guard</span><span class="field-value">At least one non-template file exists</span></div>
+    <div class="field"><span class="field-label">Validation</span><span class="field-value">None</span></div>
+  </div>
+
+  <div class="detail-card">
+    <h4>2 — solution-architect</h4>
+    <div class="field"><span class="field-label">Inputs</span><span class="field-value"><code>analysis-*.md</code>, <code>nfr-baseline.md</code>, <code>api-conventions.md</code>, <code>deployment-{platform}.md</code></span></div>
+    <div class="field"><span class="field-label">Outputs</span><span class="field-value"><code>architecture.md</code>, <code>er-diagram.md</code>, <code>env-contract.md</code>, <code>functional-specs.md</code>, <code>api-spec.yaml</code>, <code>.nvmrc</code></span></div>
+    <div class="field"><span class="field-label">Guard</span><span class="field-value"><code>requirements-analyst</code> = complete</span></div>
+    <div class="field"><span class="field-label">Validation</span><span class="field-value"><code>post-architect</code>: runtime-version, env-vars</span></div>
+  </div>
+
+  <div class="detail-card">
+    <h4>3a — developer</h4>
+    <div class="field"><span class="field-label">Inputs</span><span class="field-value"><code>architecture.md</code>, <code>env-contract.md</code>, <code>api-spec.yaml</code>, <code>stack.md</code>, <code>conventions.md</code></span></div>
+    <div class="field"><span class="field-label">Outputs</span><span class="field-value"><code>src/</code>, <code>artifacts/development/feature-*.md</code></span></div>
+    <div class="field"><span class="field-label">Guard</span><span class="field-value"><code>solution-architect</code> = complete + validation passed</span></div>
+    <div class="field"><span class="field-label">Validation</span><span class="field-value"><code>post-developer</code>: runtime-version, env-vars, no-stubs, routes, impl-notes</span></div>
+  </div>
+
+  <div class="detail-card">
+    <h4>3b — devops-engineer</h4>
+    <div class="field"><span class="field-label">Inputs</span><span class="field-value"><code>architecture.md</code>, <code>env-contract.md</code>, <code>stack.md</code>, <code>deployment.md</code>, <code>deployment-standards.md</code></span></div>
+    <div class="field"><span class="field-label">Outputs</span><span class="field-value"><code>.github/workflows/</code>, <code>Dockerfile</code>, <code>infrastructure/</code>, <code>deployment.md</code></span></div>
+    <div class="field"><span class="field-label">Guard</span><span class="field-value"><code>solution-architect</code> = complete + validation passed</span></div>
+    <div class="field"><span class="field-label">Validation</span><span class="field-value"><code>post-devops</code>: deploy-method, env-vars</span></div>
+  </div>
+
+  <div class="detail-card">
+    <h4>4a — code-reviewer</h4>
+    <div class="field"><span class="field-label">Inputs</span><span class="field-value"><code>src/</code>, <code>artifacts/development/*.md</code>, <code>architecture.md</code>, <code>api-spec.yaml</code></span></div>
+    <div class="field"><span class="field-label">Outputs</span><span class="field-value"><code>artifacts/code-review/review-*.md</code></span></div>
+    <div class="field"><span class="field-label">Guard</span><span class="field-value"><code>developer</code> + <code>devops-engineer</code> = complete</span></div>
+    <div class="field"><span class="field-label">Validation</span><span class="field-value"><code>pre-review</code>: env-vars, no-stubs, deploy-method, impl-notes</span></div>
+  </div>
+
+  <div class="detail-card">
+    <h4>4b — tester</h4>
+    <div class="field"><span class="field-label">Inputs</span><span class="field-value"><code>src/</code>, <code>requirements-include-files/*.md</code>, <code>analysis-*.md</code></span></div>
+    <div class="field"><span class="field-label">Outputs</span><span class="field-value"><code>tests/</code>, <code>artifacts/test/results-*.md</code>, <code>bug-report-*.md</code></span></div>
+    <div class="field"><span class="field-label">Guard</span><span class="field-value"><code>developer</code> = complete</span></div>
+    <div class="field"><span class="field-label">Validation</span><span class="field-value">None</span></div>
+  </div>
+
+  <div class="detail-card">
+    <h4>4c — uiux-reviewer</h4>
+    <div class="field"><span class="field-label">Inputs</span><span class="field-value">Mockups from <code>requirements-include-files/</code>, <code>uiux-standards.md</code></span></div>
+    <div class="field"><span class="field-label">Outputs</span><span class="field-value"><code>artifacts/uiux-review/review-*.md</code></span></div>
+    <div class="field"><span class="field-label">Guard</span><span class="field-value"><code>developer</code> = complete</span></div>
+    <div class="field"><span class="field-label">Validation</span><span class="field-value">None</span></div>
+  </div>
+
+  <div class="detail-card">
+    <h4>5 — security-auditor</h4>
+    <div class="field"><span class="field-label">Inputs</span><span class="field-value"><code>src/</code>, <code>architecture.md</code>, <code>security-checklist.md</code>, <code>nfr-baseline.md</code></span></div>
+    <div class="field"><span class="field-label">Outputs</span><span class="field-value"><code>artifacts/security/audit-*.md</code></span></div>
+    <div class="field"><span class="field-label">Guard</span><span class="field-value"><code>code-reviewer</code> + <code>tester</code> = complete</span></div>
+    <div class="field"><span class="field-label">Validation</span><span class="field-value">None</span></div>
+  </div>
+
+  <div class="detail-card">
+    <h4>6 — compliance-officer</h4>
+    <div class="field"><span class="field-label">Inputs</span><span class="field-value">ALL <code>artifacts/*/</code>, ALL <code>agent_docs/generic/*.md</code>, <code>env-contract.md</code></span></div>
+    <div class="field"><span class="field-label">Outputs</span><span class="field-value"><code>artifacts/compliance/compliance-*.md</code></span></div>
+    <div class="field"><span class="field-label">Guard</span><span class="field-value"><code>security-auditor</code> = complete</span></div>
+    <div class="field"><span class="field-label">Validation</span><span class="field-value"><code>pre-compliance</code>: env-vars, no-stubs, deploy-method, runtime-version</span></div>
+  </div>
+
+  <div class="detail-card">
+    <h4>7 — deploy-environment</h4>
+    <div class="field"><span class="field-label">Inputs</span><span class="field-value"><code>pipeline.md</code>, <code>deployment.md</code>, <code>git-workflow.md</code></span></div>
+    <div class="field"><span class="field-label">Outputs</span><span class="field-value"><code>artifacts/devops/deploy-{env}-*.md</code></span></div>
+    <div class="field"><span class="field-label">Guard</span><span class="field-value"><code>compliance-officer</code> = complete</span></div>
+    <div class="field"><span class="field-label">Gate</span><span class="field-value">Human approval required (even in Autopilot)</span></div>
+  </div>
+
+  <div class="detail-card">
+    <h4>8 — deploy-production</h4>
+    <div class="field"><span class="field-label">Inputs</span><span class="field-value"><code>deploy-{env}-*.md</code> (latest), <code>deployment.md</code></span></div>
+    <div class="field"><span class="field-label">Outputs</span><span class="field-value"><code>artifacts/devops/deploy-production-*.md</code></span></div>
+    <div class="field"><span class="field-label">Guard</span><span class="field-value"><code>deploy-environment</code> = complete</span></div>
+    <div class="field"><span class="field-label">Gate</span><span class="field-value">Human approval always required</span></div>
+  </div>
+
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>3. Transition Mechanics</h2>
+
+<p>Every transition between stages follows this deterministic sequence:</p>
+
+<div class="transition-flow">
+
+  <div class="transition-step">
+    <div class="step-icon guard">1</div>
+    <div class="step-content">
+      <h4>Guard Check</h4>
+      <p>Are all dependencies <code>complete</code> with 0 validation failures? If any guard fails, the stage cannot start.</p>
+    </div>
+  </div>
+
+  <div class="transition-step">
+    <div class="step-icon run">2</div>
+    <div class="step-content">
+      <h4>Stage Execution</h4>
+      <p>Claude Code invoked via <code>claude --print -p "run agent {name}"</code>. Each stage gets its own context window.</p>
+    </div>
+  </div>
+
+  <div class="transition-step">
+    <div class="step-icon validate">3</div>
+    <div class="step-content">
+      <h4>Validation Script</h4>
+      <p><code>run-stage-checks.sh {stage} {project}</code> — deterministic checks that catch issues agents cannot reliably self-check.</p>
+    </div>
+  </div>
+
+  <div class="transition-step">
+    <div class="step-icon state">4</div>
+    <div class="step-content">
+      <h4>State Update</h4>
+      <p><code>pipeline-run.json</code> updated with status, timing, validation results. <code>pipeline-log.md</code> appended with event entry.</p>
+    </div>
+  </div>
+
+  <div class="transition-step">
+    <div class="step-icon decide">5</div>
+    <div class="step-content">
+      <h4>Decision</h4>
+      <p>If validation passed → proceed to next stage. If failed → route to responsible agent for remediation. If gate → apply mode rules (auto-approve / ask human).</p>
+    </div>
+  </div>
+
+</div>
+
+<h3>Dependency Graph</h3>
+<table>
+  <tr><th>Stage</th><th>Depends on (must be <code>complete</code>)</th></tr>
+  <tr><td><code>requirements-analyst</code></td><td>(none)</td></tr>
+  <tr><td><code>solution-architect</code></td><td><code>requirements-analyst</code></td></tr>
+  <tr><td><code>developer</code></td><td><code>solution-architect</code></td></tr>
+  <tr><td><code>devops-engineer</code></td><td><code>solution-architect</code></td></tr>
+  <tr><td><code>code-reviewer</code></td><td><code>developer</code>, <code>devops-engineer</code></td></tr>
+  <tr><td><code>tester</code></td><td><code>developer</code></td></tr>
+  <tr><td><code>uiux-reviewer</code></td><td><code>developer</code></td></tr>
+  <tr><td><code>security-auditor</code></td><td><code>code-reviewer</code>, <code>tester</code></td></tr>
+  <tr><td><code>compliance-officer</code></td><td><code>security-auditor</code></td></tr>
+  <tr><td><code>deploy-environment</code></td><td><code>compliance-officer</code></td></tr>
+  <tr><td><code>deploy-production</code></td><td><code>deploy-environment</code></td></tr>
+</table>
+
+<h3>Validation Scripts</h3>
+<table>
+  <tr><th>ID</th><th>When</th><th>Checks</th></tr>
+  <tr><td><code>post-architect</code></td><td>After solution-architect</td><td><code>runtime-version</code>, <code>env-vars</code></td></tr>
+  <tr><td><code>post-developer</code></td><td>After developer</td><td><code>runtime-version</code>, <code>env-vars</code>, <code>no-stubs</code>, <code>routes</code>, <code>impl-notes-format</code></td></tr>
+  <tr><td><code>post-devops</code></td><td>After devops-engineer</td><td><code>deploy-method</code>, <code>env-vars</code></td></tr>
+  <tr><td><code>pre-review</code></td><td>Before code-reviewer</td><td><code>env-vars</code>, <code>no-stubs</code>, <code>deploy-method</code>, <code>impl-notes-format</code></td></tr>
+  <tr><td><code>pre-compliance</code></td><td>Before compliance-officer</td><td><code>env-vars</code>, <code>no-stubs</code>, <code>deploy-method</code>, <code>runtime-version</code></td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>4. Remediation Flow</h2>
+
+<p>When a reviewing agent finds fixable issues, the fix routes through upstream validation before returning to the original reviewer.</p>
+
+<h3>Loopback Chains</h3>
+
+<p><strong>Issue found by code-reviewer / tester / uiux-reviewer:</strong></p>
+<div class="remediation-chain">
+  <div class="chain-step">requirements-analyst</div>
+  <div class="chain-arrow">→</div>
+  <div class="chain-step">solution-architect</div>
+  <div class="chain-arrow">→</div>
+  <div class="chain-step">developer fix</div>
+  <div class="chain-arrow">→</div>
+  <div class="chain-step">re-run same reviewer</div>
+</div>
+
+<p><strong>Issue found by security-auditor:</strong></p>
+<div class="remediation-chain">
+  <div class="chain-step">requirements-analyst</div>
+  <div class="chain-arrow">→</div>
+  <div class="chain-step">solution-architect</div>
+  <div class="chain-arrow">→</div>
+  <div class="chain-step">developer fix</div>
+  <div class="chain-arrow">→</div>
+  <div class="chain-step">code-reviewer + tester</div>
+  <div class="chain-arrow">→</div>
+  <div class="chain-step">re-run security-auditor</div>
+</div>
+
+<p><strong>Issue found by compliance-officer:</strong></p>
+<div class="remediation-chain">
+  <div class="chain-step">requirements-analyst</div>
+  <div class="chain-arrow">→</div>
+  <div class="chain-step">solution-architect</div>
+  <div class="chain-arrow">→</div>
+  <div class="chain-step">developer fix</div>
+  <div class="chain-arrow">→</div>
+  <div class="chain-step">code-reviewer + tester</div>
+  <div class="chain-arrow">→</div>
+  <div class="chain-step">security-auditor</div>
+  <div class="chain-arrow">→</div>
+  <div class="chain-step">re-run compliance-officer</div>
+</div>
+
+<h3>Remediation Limits</h3>
+<table>
+  <tr><th>Limit</th><th>Value</th><th>Scope</th></tr>
+  <tr><td><strong>Per-issue</strong></td><td><strong>3 attempts</strong></td><td>Same issue may be attempted at most 3 times</td></tr>
+  <tr><td><strong>Per-stage total</strong></td><td><strong>9 attempts</strong></td><td>Total fix attempts across all issues within one stage</td></tr>
+</table>
+
+<h3>Blocker Judgement (Two-Agent Rule)</h3>
+<p>When a limit is hit, two sub-agents are invoked <strong>in parallel</strong>:</p>
+<ol>
+  <li><strong>The reviewing agent</strong> that found the issue</li>
+  <li><strong>The solution-architect</strong></li>
+</ol>
+<p>Each returns <strong>BLOCKER</strong> or <strong>NON-BLOCKER</strong>. If <strong>either</strong> says BLOCKER → it IS a blocker (conservative rule).</p>
+
+<table>
+  <tr><th>Verdict</th><th>Autopilot</th><th>Manual</th></tr>
+  <tr><td><strong>Blocker</strong></td><td>STOP pipeline. Log everything.</td><td>STOP. Present to user.</td></tr>
+  <tr><td><strong>Non-blocker</strong></td><td>Log as deferred. Continue.</td><td>Ask user: "Continue? [Y/n]"</td></tr>
+</table>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>5. Parallel Execution</h2>
+
+<table>
+  <tr><th>Group</th><th>Stages</th><th>Starts when</th><th>Sync barrier</th></tr>
+  <tr>
+    <td><strong>Group 1</strong></td>
+    <td><code>developer</code>, <code>devops-engineer</code></td>
+    <td><code>solution-architect</code> = complete + validation passed</td>
+    <td>Both must complete before code-reviewer starts</td>
+  </tr>
+  <tr>
+    <td><strong>Group 2</strong></td>
+    <td><code>code-reviewer</code>, <code>tester</code>, <code>uiux-reviewer</code></td>
+    <td>Per individual dependencies</td>
+    <td><code>code-reviewer</code> + <code>tester</code> must complete before security-auditor</td>
+  </tr>
+</table>
+
+<h3>Conflict of Interest</h3>
+<p>These pairs must always be <strong>different agent instances</strong>:</p>
+<div class="remediation-chain">
+  <div class="chain-step">developer ↔ code-reviewer</div>
+  <div class="chain-step">developer ↔ tester</div>
+  <div class="chain-step">developer ↔ uiux-reviewer</div>
+  <div class="chain-step">developer ↔ security-auditor</div>
+  <div class="chain-step">code-reviewer ↔ compliance-officer</div>
+  <div class="chain-step">retrospective ↔ any reviewed agent</div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>6. The Closed Loop</h2>
+
+<div class="loop-diagram">
+  <div class="loop-steps">
+    <div class="loop-step">
+      <div class="loop-title">Pipeline Run</div>
+      <div class="loop-desc">pipeline-run.json records per-stage metrics (time, remediations, validation pass/fail)</div>
+    </div>
+    <div class="loop-connector"></div>
+    <div class="loop-step">
+      <div class="loop-title">Bug Report</div>
+      <div class="loop-desc">Produced by tester or discovered post-deploy</div>
+    </div>
+    <div class="loop-connector"></div>
+    <div class="loop-step">
+      <div class="loop-title">Retrospective</div>
+      <div class="loop-desc">Phase 1: Implication Report → Phase 2: Agent scores, framework gaps, SDLC proposals, convergence analysis</div>
+    </div>
+    <div class="loop-connector"></div>
+    <div class="loop-step">
+      <div class="loop-title">Tribute → The Genesis</div>
+      <div class="loop-desc">Proposals absorbed into agent_docs/generic/ → propagated to all child projects</div>
+    </div>
+    <div class="loop-connector"></div>
+    <div class="loop-step">
+      <div class="loop-title">Re-Run</div>
+      <div class="loop-desc">Next pipeline benefits from updated standards</div>
+    </div>
+  </div>
+  <div class="loop-return">
+    <div class="loop-return-label">convergence-report.sh measures: is the loop working?</div>
+  </div>
+</div>
+
+<h3>Convergence Measurement</h3>
+<table>
+  <tr><th>Metric</th><th>What it measures</th><th>Good trend</th></tr>
+  <tr><td>Process time</td><td>Are runs getting faster?</td><td>Decreasing</td></tr>
+  <tr><td>Remediation rounds</td><td>Are fewer fix cycles needed?</td><td>Decreasing</td></tr>
+  <tr><td>Validation failures</td><td>Are fewer checks failing?</td><td>Decreasing (key metric)</td></tr>
+  <tr><td>Retrospective score</td><td>Are agent scores improving?</td><td>Increasing</td></tr>
+</table>
+<p>
+  Verdict:
+  <span class="badge converging">CONVERGING</span> failures trending down &nbsp;|&nbsp;
+  <span class="badge flat">FLAT</span> no trend &nbsp;|&nbsp;
+  <span class="badge diverging">DIVERGING</span> failures trending up
+</p>
+
+<hr class="section-divider">
+
+<!-- ═══════════════════════════════════════════════════════════════════ -->
+<h2>7. Validation Check Scripts</h2>
+
+<table>
+  <tr><th>Check</th><th>File</th><th>What it verifies</th></tr>
+  <tr><td><code>runtime-version</code></td><td><code>checks/runtime-version.sh</code></td><td>Pinning file exists and matches <code>stack.md</code></td></tr>
+  <tr><td><code>env-vars</code></td><td><code>checks/env-vars.sh</code></td><td>Code env var usage matches <code>env-contract.md</code></td></tr>
+  <tr><td><code>no-stubs</code></td><td><code>checks/no-stubs.sh</code></td><td>No TODO/HACK/FIXME/Placeholder stubs in source</td></tr>
+  <tr><td><code>routes</code></td><td><code>checks/routes.sh</code></td><td>Frontend link targets have corresponding route files</td></tr>
+  <tr><td><code>impl-notes-format</code></td><td><code>checks/impl-notes-format.sh</code></td><td>Implementation notes have all required sections</td></tr>
+  <tr><td><code>deploy-method</code></td><td><code>checks/deploy-method.sh</code></td><td>No prohibited deploy commands in CI workflows</td></tr>
+</table>
+
+<h2>8. Human Approval Gates</h2>
+
+<p>Even in Autopilot mode, two gates always require explicit human approval:</p>
+
+<table>
+  <tr><th>Gate</th><th>Stage</th><th>Why</th></tr>
+  <tr><td><code>staging-sign-off</code></td><td>deploy-environment</td><td>Staging must pass before production</td></tr>
+  <tr><td><code>production-deploy</code></td><td>deploy-production</td><td>Production deployment is irreversible</td></tr>
+</table>
+
+<p class="footnote">
+  The Genesis — Pipeline Flow Reference<br>
+  Source files: <code>pipeline-runner.sh</code>, <code>run-stage-checks.sh</code>, <code>run-pipeline.md</code>, <code>agent-roles.md</code>, <code>pipeline.md</code>
+</p>
+
+</body>
+</html>

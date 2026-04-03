@@ -89,6 +89,39 @@ If all four files exist with real content → proceed and note: `✅ Architectur
 
 ---
 
+## Step 2b — Module Decomposition Check (before developer agent only)
+
+Check if `agent_docs/project/modules/` exists and contains `module-*.md` files.
+
+**If module specs exist**, the developer stage runs in **module mode**:
+- The orchestrator launches **one developer sub-agent per module**, scoped to that module's spec
+- Build order follows the phases defined in each module spec:
+  - **Phase 0 (shared/common):** Run first, sequentially. All other modules depend on these outputs.
+  - **Phase 1 (independent):** Run in parallel after Phase 0 completes. Each module gets its own developer sub-agent via the `Agent` tool.
+  - **Phase 2 (integration):** Run after Phase 1 completes. These depend on Phase 1 outputs.
+- After all modules complete, run an **integration verification**: full project build to catch cross-module type errors, missing exports, or interface mismatches
+- If integration verification fails, route the failures to the appropriate module's developer sub-agent for remediation
+
+**How to launch a module-scoped developer sub-agent:**
+
+Use the `Agent` tool with a prompt that includes:
+1. The developer role definition (`agent_docs/generic/agents/developer.md`)
+2. The specific module spec (`agent_docs/project/modules/module-{name}.md`)
+3. Instruction to read other modules' specs **only for interface contracts** (imports)
+4. Instruction to write code **only within the module's owned scope**
+
+Example prompt:
+```
+Run agent developer for module {name}.
+Read agent_docs/project/modules/module-{name}.md for your scope and interface contracts.
+Read other module specs only for their exported interfaces (your imports).
+Only write code within the directories listed in your module's Scope → Owns section.
+```
+
+**If no module specs exist**, run developer as a single stage (existing behaviour).
+
+---
+
 ## Step 3 — Launch all agents as sub-agents via the `Agent` tool
 
 **CRITICAL: Every pipeline agent — in both the main pipeline AND remediation loops — MUST run as a sub-agent using the `Agent` tool.** This applies to ALL roles: requirements-analyst, solution-architect, developer, code-reviewer, tester, uiux-reviewer, security-auditor, compliance-officer, devops-engineer, and deploy agents. Do NOT role-play any agent inline in the main conversation. Each sub-agent gets its own context window, which:

@@ -66,7 +66,13 @@
       "mcp__upstash__*",
       "mcp__railway__*",
       "mcp__sentry__*",
-      "mcp__google-tag-manager__*"
+      "mcp__google-tag-manager__*",
+      "Bash(open \"/Users/stephen.wong/Projects-AI-Agents/-The Genesis/doc/pipeline-flow.html\")",
+      "Bash(SRC=\"/Users/stephen.wong/Projects-AI-Agents/-The Genesis\")",
+      "Bash(DST=\"/Users/stephen.wong/Projects-AI-Agents/omnichat-v11\")",
+      "Bash(__NEW_LINE_90f11081eb2ef94e__ mkdir:*)",
+      "Bash(cp \"$SRC/scripts/validate/run-stage-checks.sh\" \"$DST/scripts/validate/\")",
+      "Bash(cp \"$SRC\"/scripts/validate/checks/*.sh \"$DST/scripts/validate/checks/\")"
     ],
     "deny": [],
     "additionalDirectories": []

@@ -9,12 +9,30 @@
 
 ### 4. `developer`
 
-**Role:** Implement features according to architecture, requirements, and the approved API specification.
+**Role:** Implement features according to architecture, requirements, and the approved API specification. When module decomposition is active, each developer sub-agent is scoped to a single module.
 
 | Contract | Paths |
 |---|---|
 | **Reads** | `agent_docs/project/architecture.md`, `agent_docs/project/env-contract.md`, `agent_docs/project/specs/api-spec.yaml`, `agent_docs/project/specs/requirements-include-files/*.md`, `agent_docs/project/stack.md`, `agent_docs/project/conventions.md`, `agent_docs/generic/api-conventions.md`, `agent_docs/generic/uiux-standards.md` *(frontend projects)*, `agent_docs/generic/security-checklist.md` |
-| **Writes** | `src/` (application code), `artifacts/development/feature-{name}-YYYYMMDD-HHmm.md` (implementation notes) |
+| **Reads (module mode)** | `agent_docs/project/modules/module-{assigned-module}.md` (own module spec), `agent_docs/project/modules/module-*.md` (interface contracts only — for imports) |
+| **Writes** | `src/` (application code — in module mode, only files within the module's owned scope), `artifacts/development/feature-{name}-YYYYMMDD-HHmm.md` (implementation notes) |
+
+**Module mode (when `agent_docs/project/modules/` exists with module specs):**
+
+The orchestrator launches one developer sub-agent per module. Each sub-agent:
+1. Reads **only** its assigned module spec (`module-{name}.md`) for scope and interface contracts
+2. Reads other modules' specs **only** for their exported interfaces (to consume as imports)
+3. Writes code **only** within the directories/files listed in the module's `Scope → Owns` section
+4. Must implement all exports listed in the module's interface contract
+5. Must consume imports exactly as defined (matching types and signatures)
+6. Must not create files outside its owned scope — if something is needed that belongs to another module, raise a change request
+
+**Build phases (orchestrator enforces this order):**
+- **Phase 0 — shared/common:** Built first. All other modules depend on its exports (shared types, utilities, config).
+- **Phase 1 — independent:** Built in parallel after Phase 0 completes. Each module gets its own developer sub-agent.
+- **Phase 2 — integration:** Built after Phase 1 completes. These modules depend on Phase 1 outputs.
+
+After all modules complete, the orchestrator runs an **integration verification** step: build the full project and check for interface mismatches (type errors, missing exports, circular dependencies).
 
 **Responsibilities:**
 - Implement features strictly per architecture, requirements, and `api-spec.yaml`
@@ -40,6 +58,7 @@
 - Edit `api-spec.yaml` or `env-contract.md` directly
 - Leave placeholder, stub, or non-functional implementations — if an endpoint is missing from the spec, raise a change request and set STATUS: BLOCKED
 - Implement any endpoint not in `api-spec.yaml`
+- Write code outside the module's owned scope (module mode) — if a shared utility is needed, request it via change request to the shared module
 - Use hardcoded fallbacks for required env vars (e.g. `VITE_API_BASE_URL || 'https://...'`)
 
 **Output format (implementation notes):**
