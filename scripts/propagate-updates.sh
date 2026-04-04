@@ -250,6 +250,71 @@ for DEST in "${TARGETS[@]}"; do
   echo ""
 
   # ---------------------------------------------------------------------------
+  # 1d. OVERWRITE — skills (.claude/skills/*/SKILL.md)
+  # ---------------------------------------------------------------------------
+  echo -e "  ${BOLD}[1d] Updating skills...${NC}"
+
+  SKILLS_SRC="$SRC/.claude/skills"
+  SKILLS_DEST="$DEST/.claude/skills"
+
+  if [[ -d "$SKILLS_SRC" ]]; then
+    for skill_dir in "$SKILLS_SRC"/*/; do
+      [[ ! -d "$skill_dir" ]] && continue
+      skill_name="$(basename "$skill_dir")"
+      mkdir -p "$SKILLS_DEST/$skill_name"
+      src_file="$skill_dir/SKILL.md"
+      dest_file="$SKILLS_DEST/$skill_name/SKILL.md"
+
+      if [[ ! -f "$src_file" ]]; then continue; fi
+
+      if [[ -f "$dest_file" ]]; then
+        if ! diff -q "$src_file" "$dest_file" > /dev/null 2>&1; then
+          cp "$src_file" "$dest_file"
+          echo -e "    ${GREEN}↺  Updated:${NC} .claude/skills/$skill_name/SKILL.md"
+          ((OVERWRITTEN++))
+        else
+          echo -e "    —  No change: .claude/skills/$skill_name/SKILL.md"
+        fi
+      else
+        cp "$src_file" "$dest_file"
+        echo -e "    ${GREEN}+  Added:${NC} .claude/skills/$skill_name/SKILL.md"
+        ((ADDED++))
+      fi
+    done
+  fi
+  echo ""
+
+  # ---------------------------------------------------------------------------
+  # 1e. OVERWRITE — custom agent definitions (.claude/agents/*.md)
+  # ---------------------------------------------------------------------------
+  echo -e "  ${BOLD}[1d] Updating custom agent definitions...${NC}"
+
+  AGENTS_SRC="$SRC/.claude/agents"
+  AGENTS_DEST="$DEST/.claude/agents"
+  mkdir -p "$AGENTS_DEST"
+
+  for src_file in "$AGENTS_SRC"/*.md; do
+    [[ ! -f "$src_file" ]] && continue
+    filename="$(basename "$src_file")"
+    dest_file="$AGENTS_DEST/$filename"
+
+    if [[ -f "$dest_file" ]]; then
+      if ! diff -q "$src_file" "$dest_file" > /dev/null 2>&1; then
+        cp "$src_file" "$dest_file"
+        echo -e "    ${GREEN}↺  Updated:${NC} .claude/agents/$filename"
+        ((OVERWRITTEN++))
+      else
+        echo -e "    —  No change: .claude/agents/$filename"
+      fi
+    else
+      cp "$src_file" "$dest_file"
+      echo -e "    ${GREEN}+  Added:${NC} .claude/agents/$filename"
+      ((ADDED++))
+    fi
+  done
+  echo ""
+
+  # ---------------------------------------------------------------------------
   # 2. PLATFORM — copy only applicable deployment files, remove others
   # ---------------------------------------------------------------------------
   echo -e "  ${BOLD}[2] Syncing platform-specific deployment files...${NC}"

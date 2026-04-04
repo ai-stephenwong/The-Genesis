@@ -199,6 +199,23 @@ Show a full summary including the confirmed folder name and ask: **"Create proje
 │   ├── settings.json                  ← GENERATE (not copy) — see Step 5b below
 │   ├── hooks/
 │   │   └── check-credential-inspection.py  ← copy from .claude/hooks/
+│   ├── skills/                          ← copy ALL skill folders from .claude/skills/
+│   │   ├── team-pipeline/SKILL.md
+│   │   ├── status/SKILL.md
+│   │   ├── deploy-check/SKILL.md
+│   │   └── (any future skills)
+│   ├── agents/                          ← copy ALL .md files from .claude/agents/ (custom agent definitions)
+│   │   ├── requirements-analyst.md
+│   │   ├── solution-architect.md
+│   │   ├── developer.md
+│   │   ├── code-reviewer.md
+│   │   ├── tester.md
+│   │   ├── uiux-reviewer.md
+│   │   ├── security-auditor.md
+│   │   ├── compliance-officer.md
+│   │   ├── devops-engineer.md
+│   │   ├── retrospective-analyst.md
+│   │   └── (any future agent definitions)
 │   └── instructions/                    ← copy ALL .md files from .claude/instructions/ (except create-project.md)
 │       ├── session-start.md
 │       ├── run-pipeline.md
@@ -292,48 +309,7 @@ Generate `.claude/settings.json` with this structure. **No absolute paths** — 
       "Read(./*)",
       "Write(./*)",
       "Edit(./*)",
-      "Bash(git:*)",
-      "Bash(npm:*)",
-      "Bash(npx:*)",
-      "Bash(node:*)",
-      "Bash(cp:*)",
-      "Bash(mv:*)",
-      "Bash(mkdir:*)",
-      "Bash(mkdir -p:*)",
-      "Bash(ls:*)",
-      "Bash(find:*)",
-      "Bash(rm:*)",
-      "Bash(rm -r:*)",
-      "Bash(rm -rf:*)",
-      "Bash(zip:*)",
-      "Bash(unzip:*)",
-      "Bash(cat:*)",
-      "Bash(source:*)",
-      "Bash(chmod:*)",
-      "Bash(sed:*)",
-      "Bash(grep:*)",
-      "Bash(cd:*)",
-      "Bash(echo:*)",
-      "Bash(doppler:*)",
-      "Bash(brew:*)",
-      "Bash(bash:*)",
-      "Bash(which:*)",
-      "Bash(sw_vers)",
-      "Bash(python3:*)",
-      "Bash(test:*)",
-      "Bash(wc:*)",
-      "Bash(head:*)",
-      "Bash(tail:*)",
-      "Bash(sort:*)",
-      "Bash(diff:*)",
-      "Bash(touch:*)",
-      "Bash(pwd)",
-      "Bash(env:*)",
-      "Bash(export:*)",
-      "Bash(tr:*)",
-      "Bash(cut:*)",
-      "Bash(awk:*)",
-      "Bash(xargs:*)",
+      "Bash(*)",
       "WebSearch",
       "mcp__github__*",
       "mcp__vercel__*",
@@ -373,55 +349,15 @@ Generate `.claude/settings.json` with this structure. **No absolute paths** — 
 }
 ```
 
-This ensures:
-- All file reads, writes, and edits within the project folder are auto-approved
-- Common shell commands (git, npm, file ops) run without prompting
-- All MCP servers are pre-approved
-- The Genesis folder is accessible as an additional directory (for reading standards)
-- The credential-inspection hook runs on every Bash command
-
 ---
 
-## Step 5c — MUST DO: Add environment URLs to permitted domains
+## Step 5c — Add environment URLs when confirmed
 
-**This step applies at project creation AND at any later point when an environment URL is confirmed.**
-
-Whenever a deployment URL is confirmed — whether provided by Vercel, Cloudflare, a custom domain, or any other source — **immediately** add it to the project's `.claude/settings.json` `allow` list as a `WebFetch` entry. This prevents `curl` and `WebFetch` to those URLs from prompting the user during smoke tests, health checks, or any pipeline activity.
-
-**Format — add BOTH entries per domain:**
+When a deployment URL is confirmed (at creation or later), add to `settings.json`:
 ```json
-"Bash(curl:https://{domain}/*)",
-"WebFetch(domain:{domain-without-protocol})"
+"WebFetch(domain:{domain})"
 ```
-
-**Example:** If the confirmed URLs are:
-- Frontend: `https://omnichat-v5-web.vercel.app`
-- API: `https://omnichat-v5-api.workers.dev`
-- CMS: `https://omnichat-v5-cms-web.vercel.app`
-
-Add these entries to `permissions.allow`:
-```json
-"Bash(curl:https://omnichat-v5-web.vercel.app/*)",
-"Bash(curl:https://omnichat-v5-api.workers.dev/*)",
-"Bash(curl:https://omnichat-v5-cms-web.vercel.app/*)",
-"WebFetch(domain:omnichat-v5-web.vercel.app)",
-"WebFetch(domain:omnichat-v5-api.workers.dev)",
-"WebFetch(domain:omnichat-v5-cms-web.vercel.app)"
-```
-
-> **No blanket `Bash(curl:*)` is permitted.** Only explicitly confirmed domain URLs may be added.
-
-**When to execute this step:**
-- At project creation if URLs are already known
-- When the devops-engineer confirms deployment URLs after first deploy
-- When a custom domain is configured
-- When any environment (dev / staging / production) URL changes
-- When Vercel preview deployment URLs are established
-
-**This is mandatory** — skipping this will cause every smoke test and health check to pause for user approval, breaking Autopilot mode
-- All MCP servers are pre-approved
-- The Genesis folder is accessible as an additional directory (for reading standards)
-- The credential-inspection hook runs on every Bash command
+This prevents smoke test prompts in Autopilot mode.
 
 ---
 
