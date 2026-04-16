@@ -1,0 +1,98 @@
+# =============================================================================
+# Requirement Schema — canonical contract for a single structured requirement
+# Location in projects: agent_docs/project/specs/requirements/*.yaml
+# One YAML file = one requirement.
+# Validated by: scripts/validate/checks/requirements.sh
+# =============================================================================
+
+# -----------------------------------------------------------------------------
+# Required fields
+# -----------------------------------------------------------------------------
+
+id: REQ-AUTH-001
+# ^^ Pattern: REQ-<CATEGORY>-<NNN>
+#    CATEGORY: one of the codes below (extend per project if justified)
+#    NNN:      3-digit serial, unique within the whole project
+
+category: auth
+# ^^ One of:
+#    auth         — authentication & authorization
+#    user         — user profile & account management
+#    job          — job posting, search, application
+#    cms          — content management
+#    ui           — UI interaction behaviour (flows, state transitions)
+#    visual       — visual design fidelity (layout, colour, typography vs mockup)
+#    data         — data model, migrations, import/export
+#    integration  — third-party integrations
+#    nfr-perf     — non-functional: performance
+#    nfr-security — non-functional: security
+#    nfr-access   — non-functional: accessibility
+#    nfr-i18n     — non-functional: internationalisation
+#    biz          — business rules
+#    ops          — operations, runbook, observability
+
+priority: P1
+# ^^ P0 (blocker)  | P1 (must-have)  | P2 (should-have)  | P3 (nice-to-have)
+
+status: confirmed
+# ^^ confirmed  — explicit in source specification
+#    assumed    — silent in source, default applied from company standards
+#    gap        — ambiguous, no sensible default; BLOCKS the pipeline gate
+
+source:
+  file: Recruit.com.hk_Specification.md
+  # ^^ filename inside specs/requirements-include-files/ — MUST exist
+  section: "§4.2 Login"
+  # ^^ free-text section reference. "—" when status=assumed and no source exists.
+
+statement: >
+  Registered users can log in with email and password and receive an
+  authenticated session represented by a JWT.
+# ^^ One-paragraph plain-English statement. What, not how.
+
+acceptance_criteria:
+  # ^^ At least one. Each is independently verifiable by the tester.
+  - id: AC-01
+    given: a valid email and matching password
+    then: the API returns 200 OK with a JWT whose exp is 60 minutes in the future
+  - id: AC-02
+    given: an invalid email or password
+    then: the API returns 401 with error.code "INVALID_CREDENTIALS"
+
+# -----------------------------------------------------------------------------
+# Optional fields
+# -----------------------------------------------------------------------------
+
+nfr_ties: [nfr-security.rate-limit, nfr-security.password-hashing]
+# ^^ Cross-links to related NFR requirements or company-standard controls.
+#    Consumed by security-auditor to scope its checks.
+
+assumption_reason: ""
+# ^^ REQUIRED if status=assumed. Explains what default was applied and why.
+#    Example: "Source spec silent on session length; applying company default
+#    of 60-min JWT from nfr-baseline.md §3.2"
+
+open_questions: []
+# ^^ REQUIRED non-empty if status=gap. Questions to route to the client.
+
+depends_on: []
+# ^^ Other REQ-IDs that must exist for this one to be meaningful.
+
+tags: []
+# ^^ Free-form labels (e.g. ["mvp", "phase-2"]) for filtering.
+
+# -----------------------------------------------------------------------------
+# Lifecycle (populated by downstream agents — do not edit at analyst stage)
+# -----------------------------------------------------------------------------
+
+implemented_by: []
+# ^^ File paths under src/ that implement this requirement.
+#    Populated by the developer's Implementation Notes; reverse-indexed
+#    by the traceability validator.
+
+tested_by: []
+# ^^ Test file paths. Populated by the tester; every AC should appear
+#    in at least one test name or description.
+
+reviewed_by: []
+# ^^ Review artifact paths that signed off this requirement.

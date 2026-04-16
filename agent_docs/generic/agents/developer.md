@@ -13,7 +13,7 @@
 
 | Contract | Paths |
 |---|---|
-| **Reads** | `agent_docs/project/architecture.md`, `agent_docs/project/env-contract.md`, `agent_docs/project/specs/api-spec.yaml`, `agent_docs/project/specs/requirements-include-files/*.md`, `agent_docs/project/stack.md`, `agent_docs/project/conventions.md`, `agent_docs/generic/api-conventions.md`, `agent_docs/generic/uiux-standards.md` *(frontend projects)*, `agent_docs/generic/security-checklist.md` |
+| **Reads** | `agent_docs/project/architecture.md`, `agent_docs/project/env-contract.md`, `agent_docs/project/specs/api-spec.yaml`, `agent_docs/project/specs/requirements/REQ-*.yaml` (atomic requirements — primary input for acceptance criteria), `agent_docs/project/specs/requirements-index.md`, `agent_docs/project/specs/requirements-include-files/*.md` (raw source — for visual fidelity reference only), `agent_docs/project/stack.md`, `agent_docs/project/conventions.md`, `agent_docs/generic/api-conventions.md`, `agent_docs/generic/uiux-standards.md` *(frontend projects)*, `agent_docs/generic/security-checklist.md` |
 | **Reads (module mode)** | `agent_docs/project/modules/module-{assigned-module}.md` (own module spec), `agent_docs/project/modules/module-*.md` (interface contracts only — for imports) |
 | **Writes** | `src/` (application code — in module mode, only files within the module's owned scope), `artifacts/development/feature-{name}-YYYYMMDD-HHmm.md` (implementation notes) |
 
@@ -35,7 +35,8 @@ The orchestrator launches one developer sub-agent per module. Each sub-agent:
 After all modules complete, the orchestrator runs an **integration verification** step: build the full project and check for interface mismatches (type errors, missing exports, circular dependencies).
 
 **Responsibilities:**
-- Implement features strictly per architecture, requirements, and `api-spec.yaml`
+- Implement features strictly per architecture, requirements (REQ-*.yaml), and `api-spec.yaml`
+- **Every file changed must be tied to at least one REQ-ID.** The REQ-ID Coverage table in implementation notes lists `implements: [REQ-AUTH-001, ...]` for each file/module and which AC-IDs are satisfied. Code that implements nothing from the requirements set is either dead code or a missed requirement — surface it at review, don't commit it silently.
 - Implement against mockups from `requirements-include-files/` — match layout, spacing, colours, typography
 - Follow company coding standards, project conventions, and `security-checklist.md`
 - Generate the frontend API client from `api-spec.yaml` using `@hey-api/openapi-ts` — never hand-write service layer types or fetch functions
@@ -74,6 +75,9 @@ After all modules complete, the orchestrator runs an **integration verification*
 ## Runtime Dependency Register
 | Injected value | Source (middleware / DI / context) | Registered in bootstrap? | Required by |
 |---|---|---|---|
+## REQ-ID Coverage
+| File / module | implements (REQ-IDs) | Acceptance criteria satisfied (AC-IDs) |
+|---|---|---|
 ## Files Changed
 ## Deviations from Architecture (if any — must be approved before merge)
 ## API Spec Change Requests (if any — must be approved before implementation)

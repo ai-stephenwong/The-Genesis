@@ -11,13 +11,14 @@
 
 | Contract | Paths |
 |---|---|
-| **Reads** | `src/`, `agent_docs/project/specs/requirements-include-files/*.md`, `artifacts/requirements/analysis-*.md`, `agent_docs/project/commands.md` |
+| **Reads** | `src/`, `agent_docs/project/specs/requirements/REQ-*.yaml` (atomic requirements — authoritative source of acceptance criteria), `agent_docs/project/specs/requirements-index.md`, `agent_docs/project/specs/requirements-include-files/*.md` (raw source — supplementary only), `artifacts/requirements/analysis-*.md`, `artifacts/development/feature-*.md` (REQ-ID Coverage tables), `agent_docs/project/commands.md` |
 | **Writes** | `tests/` (test files), `artifacts/test/results-YYYYMMDD-HHmm.md`, `artifacts/development/bug-report-YYYYMMDD-HHmm.md` |
 
 **Responsibilities:**
 - Write and run unit, integration, and E2E tests
 - **Test infrastructure self-validation (mandatory):** Any test configuration file created or modified by the tester (`jest.config.ts`, `vitest.config.ts`, `playwright.config.ts`, etc.) must be executed at least once before the test results artifact is written. Run the relevant command (`npm run test`, `npm run coverage`, `npx playwright test`) and confirm it exits without a dependency or configuration error. The results artifact must record the exact command run and the outcome. If a configuration file cannot be run due to environment constraints, flag it explicitly as a BLOCKED condition with the reason — a config file that has never been executed must not appear as "Created" without a caveat. When configuring a coverage provider (e.g. `coverage.provider: 'v8'`), verify the corresponding peer dependency is installed (e.g. `@vitest/coverage-v8`).
-- Verify each functional requirement has test coverage
+- Verify each functional requirement has test coverage. The Requirements Coverage Matrix is keyed by `(REQ-ID, AC-ID)` — every acceptance criterion in every non-gap requirement must map to at least one test. Coverage gaps are reported as Medium-severity bugs; missing coverage of a P0/P1 requirement is Critical.
+- **Behavioural harness — honest limits:** the test suite is a *sensor*, not a proof of correctness. LLM-generated tests can pass on wrong-but-internally-consistent implementations. For P0 paths (auth, payment, data-loss-risk flows) the tester must write at least one test where the assertions come directly from the REQ-YAML `acceptance_criteria.then` field, not from the implementation's observed behaviour. If the test is authored by reading the code, note it as such — a reviewer can then scrutinise whether the assertion is independent of the code it's testing.
 - Document test results and any failures
 - Flag gaps in coverage
 - **Deployment sanity check — run before any test against a deployed environment:** Before executing smoke tests, integration tests, or E2E tests against a live environment, fetch `GET /health` from every server and verify: (1) `deploy_time > git_commit_time` (causality — HALT if violated); (2) `git_commit` matches the expected commit SHA (`$GITHUB_SHA` in CI, `git rev-parse --short HEAD` locally — HALT if mismatched); (3) `deploy_time` is within a reasonable window (WARN if stale). Apply the same checks to the frontend build info if exposed. If any HALT-level check fails, stop all tests and report the discrepancy — never run a test suite against a server that may be serving the wrong code. See `agent_docs/generic/api-conventions.md` — Deployment Sanity Check for the full algorithm and output format.
@@ -45,6 +46,8 @@
 ## Coverage Report
 ## Failed Tests
 ## Requirements Coverage Matrix
+| REQ-ID | AC-ID | Test file / name | Test source (spec-driven or code-driven) | Status |
+|---|---|---|---|---|
 ## Gaps & Recommendations
 ## PILOT STATUS
 STATUS: COMPLETE | BLOCKED | FAILED

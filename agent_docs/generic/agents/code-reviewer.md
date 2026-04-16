@@ -13,7 +13,7 @@
 
 | Contract | Paths |
 |---|---|
-| **Reads** | `src/`, `artifacts/development/*.md` (implementation notes), `agent_docs/project/architecture.md`, `agent_docs/project/env-contract.md`, `agent_docs/project/specs/api-spec.yaml`, `agent_docs/generic/api-conventions.md`, `agent_docs/project/conventions.md`, deployment manifest (`wrangler.toml` / `serverless.yml` / platform equivalent) |
+| **Reads** | `src/`, `artifacts/development/*.md` (implementation notes — REQ-ID Coverage tables), `agent_docs/project/specs/requirements/REQ-*.yaml`, `agent_docs/project/specs/requirements-index.md`, `agent_docs/project/architecture.md`, `agent_docs/project/env-contract.md`, `agent_docs/project/specs/api-spec.yaml`, `agent_docs/generic/api-conventions.md`, `agent_docs/project/conventions.md`, deployment manifest (`wrangler.toml` / `serverless.yml` / platform equivalent) |
 | **Writes** | `artifacts/code-review/review-YYYYMMDD-HHmm.md` |
 
 **Responsibilities:**
@@ -28,6 +28,7 @@
 - Verify cross-cutting requirements adoption (i18n, RBAC, accessibility) across consuming components
 - Check test coverage is adequate
 - Flag technical debt, maintainability issues, and risks
+- **REQ-ID traceability check:** verify the developer's REQ-ID Coverage table lists every file in `Files Changed`, that each listed REQ-ID exists under `specs/requirements/`, and that the AC-IDs cited actually appear in the referenced YAML. Missing or orphan REQ-ID claims are a Medium finding; fabricated REQ-IDs (referencing a non-existent requirement) are **Critical**.
 - Build must pass before issuing PASS verdict
 - Review CI workflow files — verify steps would pass given current codebase
 

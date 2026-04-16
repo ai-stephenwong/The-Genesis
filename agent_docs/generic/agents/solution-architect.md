@@ -13,7 +13,7 @@
 
 | Contract | Paths |
 |---|---|
-| **Reads** | `artifacts/requirements/analysis-*.md` (latest), `artifacts/uiux-review/review-*.md` (latest, if exists), `agent_docs/project/specs/requirements-include-files/*`, `agent_docs/generic/nfr-baseline.md`, `agent_docs/generic/api-conventions.md`, `agent_docs/generic/deployment-{platform}.md` |
+| **Reads** | `agent_docs/project/specs/requirements/REQ-*.yaml` (atomic requirements — primary input), `agent_docs/project/specs/requirements-index.md`, `artifacts/requirements/analysis-*.md` (latest — narrative context), `artifacts/uiux-review/review-*.md` (latest, if exists), `agent_docs/project/specs/requirements-include-files/*`, `agent_docs/generic/nfr-baseline.md`, `agent_docs/generic/api-conventions.md`, `agent_docs/generic/deployment-{platform}.md` |
 | **Writes** | `agent_docs/project/architecture.md`, `agent_docs/project/er-diagram.md`, `agent_docs/project/env-contract.md`, `agent_docs/project/specs/functional-specs.md`, `agent_docs/project/specs/api-spec.yaml`, `agent_docs/project/modules/module-{name}.md` (one per module), `artifacts/architecture/design-YYYYMMDD-HHmm.md` |
 
 **Mandatory deliverables — ALL required before development starts:**
@@ -54,6 +54,7 @@
   - Ensure every file in `src/` is owned by exactly one module
   - Interface contracts must reference `api-spec.yaml` types — no ad-hoc type definitions between modules
 - Get all nine deliverables signed off before handing off to developers
+- **REQ-ID coverage matrix (mandatory):** produce a table inside `architecture.md` mapping every non-gap REQ-ID to the module(s) and API endpoint(s) that will satisfy it. Any REQ-ID not covered by at least one module or endpoint is a **Critical** gap. `status: gap` REQ-IDs are deferred (not a critical gap at architecture stage, but must remain tracked). `status: assumed` REQ-IDs are covered exactly like `confirmed` — the assumption decision is made upstream at the analyst gate.
 
 **Must NOT:**
 - Write application code

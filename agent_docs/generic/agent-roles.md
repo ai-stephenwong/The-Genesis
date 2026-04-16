@@ -33,6 +33,15 @@
 > Any env var in code or CI/CD configuration whose key name does not appear in the contract is a **Critical** violation. The contract is the single source of truth — no guessing, no improvising.
 >
 > **Universal Rule — Internal consistency `[8.25]`:** All deliverables produced by an agent — and all deliverables across agents — must be consistent with each other. If you update one document, update every other document that references or depends on the same information. If you discover that an upstream deliverable contradicts your own, halt and escalate — do not silently proceed with one version and ignore the other. Reviewing agents (code-reviewer, security-auditor, compliance-officer) must treat any inconsistency between upstream deliverables as a **Critical** finding. Consistency is not optional — a set of deliverables that contradict each other is worse than incomplete deliverables, because contradictions cause downstream agents to build on the wrong assumptions silently.
+>
+> **Universal Rule — REQ-ID traceability `[8.25, 8.29]`:** Requirements are the atomic unit of work across the pipeline. The `requirements-analyst` compiles the client spec into individual YAML files under `agent_docs/project/specs/requirements/` (one REQ-ID per file, schema at `agent_docs/generic/requirement.schema.yaml`) and a human-readable index at `agent_docs/project/specs/requirements-index.md`. Every downstream agent references work by REQ-ID, not by prose description:
+>
+> - `solution-architect` must cover every non-gap REQ-ID in the architecture deliverables (a REQ-to-endpoint / REQ-to-module matrix is mandatory)
+> - `developer` implementation notes must list `implements: [REQ-...]` for each file changed
+> - `tester` must have at least one test per acceptance criterion; the Requirements Coverage Matrix is keyed by REQ-ID and AC-ID
+> - `code-reviewer`, `security-auditor`, `compliance-officer` cite REQ-IDs in findings so traceability is preserved end-to-end
+>
+> An artifact that cannot be tied back to a REQ-ID is either dead code or a missed requirement — both are reviewing-agent findings. Requirements with `status: gap` block the requirements-sign-off gate; requirements with `status: assumed` must be explicitly accepted at the gate (or auto-accepted in Autopilot if the assumption cites a company standard).
 
 ---
 

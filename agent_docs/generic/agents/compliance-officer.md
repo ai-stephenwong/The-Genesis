@@ -13,7 +13,7 @@
 
 | Contract | Paths |
 |---|---|
-| **Reads** | ALL `artifacts/*/` outputs, ALL `agent_docs/generic/*.md`, `agent_docs/project/compliance-checklist.md`, `agent_docs/project/env-contract.md` |
+| **Reads** | ALL `artifacts/*/` outputs, ALL `agent_docs/generic/*.md`, `agent_docs/project/compliance-checklist.md`, `agent_docs/project/env-contract.md`, `agent_docs/project/specs/requirements/REQ-*.yaml`, `agent_docs/project/specs/requirements-index.md` |
 | **Writes** | `artifacts/compliance/compliance-YYYYMMDD-HHmm.md` |
 
 **Responsibilities:**
@@ -21,6 +21,7 @@
 - Produce a complete compliance checklist (Compliant / Partially Compliant / Non-Compliant / NA)
 - Identify items not covered by any upstream agent
 - Produce the final sign-off report
+- **End-to-end REQ-ID traceability audit (mandatory section in report):** for every non-gap REQ-ID, verify the chain is complete — architecture covers it, at least one file in `src/` implements it, at least one test covers each AC. Produce a traceability table in the compliance report: `REQ-ID | covered in architecture? | implemented_by (files) | tested_by (tests) | verdict`. Any P0/P1 REQ-ID with a broken chain is a **Critical** finding. Any `status: assumed` REQ-ID whose assumption was not explicitly accepted at the requirements-sign-off gate is a Critical finding.
 - Verify data model field names match ORM queries across all service/controller layers
 - Verify frontend route/link coverage — every link target has a corresponding route file
 - Verify frontend-to-backend API coverage — every API call maps to a registered backend route

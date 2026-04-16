@@ -258,14 +258,18 @@ Show a full summary including the confirmed folder name and ask: **"Create proje
 │       ├── requirements/              ← raw requirements files (one per topic)
 │       │   └── 01-functional.md
 │       └── specs/
-│           ├── requirements.md        ← requirements registry (drift-checked)
+│           ├── requirements.md        ← raw-files registry (drift-checked)
+│           ├── requirements-index.md  ← TOC of structured REQ-IDs (requirements-analyst fills this in)
+│           ├── requirements/          ← ONE YAML file per REQ-ID (requirements-analyst fills this in)
+│           │   └── (empty at creation — REQ-*.yaml files land here)
 │           ├── design.md
 │           ├── functional-specs.md    ← template only; solution-architect fills this in
 │           └── requirements-include-files/
 │               └── 01-functional.md
 │           ⚠️  api-spec.yaml is NOT pre-created — produced by solution-architect.
 │           ⚠️  er-diagram.md is NOT pre-created — produced by solution-architect.
-│               Pre-creating these files would falsely pass the architecture gate check.
+│           ⚠️  specs/requirements/REQ-*.yaml are NOT pre-created — produced by requirements-analyst.
+│               Pre-creating any of these would falsely pass the corresponding gate check.
 ├── scripts/                           ← deployment wrapper scripts (Claude calls these, never raw CLI)
 │   ├── deploy-vercel.sh               ← copy from The Genesis scripts/
 │   ├── deploy-wrangler.sh             ← copy from The Genesis scripts/

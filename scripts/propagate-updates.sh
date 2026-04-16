@@ -80,6 +80,7 @@ AGNOSTIC_FILES=(
   git-workflow.md
   uiux-standards.md
   agent-roles.md
+  requirement.schema.yaml
 )
 
 # =============================================================================
