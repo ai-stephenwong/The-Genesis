@@ -364,29 +364,37 @@ for DEST in "${TARGETS[@]}"; do
   # ---------------------------------------------------------------------------
   echo -e "  ${BOLD}[3] Adding new template files (if missing)...${NC}"
 
-  # api-spec.yaml
+  # api-spec.yaml — skip cleanly if template missing (templates/ is optional)
   API_SPEC_SRC="$SRC/agent_docs/templates/specs/api-spec.yaml"
   API_SPEC_DEST="$DEST/agent_docs/project/specs/api-spec.yaml"
   mkdir -p "$DEST/agent_docs/project/specs"
 
   if [[ ! -f "$API_SPEC_DEST" ]]; then
-    cp "$API_SPEC_SRC" "$API_SPEC_DEST"
-    echo -e "    ${GREEN}+  Added:${NC} agent_docs/project/specs/api-spec.yaml"
-    echo -e "    ${YELLOW}   ⚠  ACTION REQUIRED: fill in api-spec.yaml with actual endpoints before development starts${NC}"
-    ((ADDED++))
+    if [[ -f "$API_SPEC_SRC" ]]; then
+      cp "$API_SPEC_SRC" "$API_SPEC_DEST"
+      echo -e "    ${GREEN}+  Added:${NC} agent_docs/project/specs/api-spec.yaml"
+      echo -e "    ${YELLOW}   ⚠  ACTION REQUIRED: fill in api-spec.yaml with actual endpoints before development starts${NC}"
+      ((ADDED++))
+    else
+      echo -e "    —  Skipped: agent_docs/project/specs/api-spec.yaml (no template in Genesis — solution-architect produces this)"
+    fi
   else
     echo -e "    —  Exists: agent_docs/project/specs/api-spec.yaml (skipped)"
   fi
 
-  # env-contract.md
+  # env-contract.md — skip cleanly if template missing
   ENV_CONTRACT_SRC="$SRC/agent_docs/templates/env-contract.md"
   ENV_CONTRACT_DEST="$DEST/agent_docs/project/env-contract.md"
 
   if [[ ! -f "$ENV_CONTRACT_DEST" ]]; then
-    cp "$ENV_CONTRACT_SRC" "$ENV_CONTRACT_DEST"
-    echo -e "    ${GREEN}+  Added:${NC} agent_docs/project/env-contract.md"
-    echo -e "    ${YELLOW}   ⚠  ACTION REQUIRED: solution-architect must fill in env-contract.md before development starts${NC}"
-    ((ADDED++))
+    if [[ -f "$ENV_CONTRACT_SRC" ]]; then
+      cp "$ENV_CONTRACT_SRC" "$ENV_CONTRACT_DEST"
+      echo -e "    ${GREEN}+  Added:${NC} agent_docs/project/env-contract.md"
+      echo -e "    ${YELLOW}   ⚠  ACTION REQUIRED: solution-architect must fill in env-contract.md before development starts${NC}"
+      ((ADDED++))
+    else
+      echo -e "    —  Skipped: agent_docs/project/env-contract.md (no template in Genesis)"
+    fi
   else
     echo -e "    —  Exists: agent_docs/project/env-contract.md (skipped)"
   fi
