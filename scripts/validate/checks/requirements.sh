@@ -130,7 +130,7 @@ for f in yaml_files:
 
 if index_path.exists():
     index_text = index_path.read_text()
-    index_ids = set(re.findall(r"REQ-[A-Z]+(?:-[A-Z]+)*-\d{3}", index_text))
+    index_ids = set(re.findall(r"REQ-[A-Z0-9]+(?:-[A-Z0-9]+)*-\d{3}", index_text))
     for req_id in all_ids:
         if req_id not in index_ids:
             errors.append(f"requirements-index.md: missing row for `{req_id}`")
