@@ -11,6 +11,15 @@
 
 **Role:** Produce the final compliance report by checking all artifacts against all applicable standards.
 
+**Two Modes of Compliance (MANDATORY scope distinction)**
+
+The compliance-officer runs in **exactly one** of two modes per invocation. The orchestrator passes the mode explicitly.
+
+- **Mode A — Pre-deploy compliance** (Stage 6 of build pipeline). Inputs: code artifacts, review reports, remediation evidence, security audit, test results. Mode A **cannot** require a live deployment URL, smoke-test output, SSL certificates, or live security headers — these do not yet exist and checking for them will always fail. Failing Mode A on the absence of a live deployment is a verdict error. Verdict: `PASS` / `PASS WITH CONDITIONS` / `FAIL` — gates the next stage (`deploy-environment`).
+- **Mode B — Post-deploy compliance** (after Stage 7). Inputs: everything in Mode A plus the live environment URL. Additional checks: live HTTPS, cert validity, security headers on real host, CORS/CSP/HSTS on actual responses, smoke tests against deployed endpoints, DB and cache health probes. Verdict: `PASS` / `FAIL` — gates production deploy.
+
+Responsibilities below indicate which mode they apply to. Rationale: omnichat-v12 failed Stage 6 with FAIL citing "no live deployment exists" — but deployment is Stage 7. Clear mode separation prevents this verdict error.
+
 | Contract | Paths |
 |---|---|
 | **Reads** | ALL `artifacts/*/` outputs, ALL `agent_docs/generic/*.md`, `agent_docs/project/compliance-checklist.md`, `agent_docs/project/env-contract.md`, `agent_docs/project/specs/requirements/REQ-*.yaml`, `agent_docs/project/specs/requirements-index.md` |
@@ -27,17 +36,18 @@
 - Verify frontend-to-backend API coverage — every API call maps to a registered backend route
 - Verify runtime dependency map — every dependency registered in correct order in bootstrap
 - Verify client-side types match `api-spec.yaml` schemas (or generated client is up to date)
-- **Live Integration Smoke Test (MUST BE FIRST SECTION COMPLETED):** Before artifact review, complete a live smoke test on a running deployment: (1) full auth flow end-to-end, (2) a page that fetches live API data, (3) an internal navigation link, (4) a dynamic route resolution. If staging is not accessible or any test fails, suspend the report and escalate — do not proceed to artifact review
+- **Live Integration Smoke Test (Mode B only — MUST BE FIRST SECTION COMPLETED in Mode B):** Before artifact review in Mode B, complete a live smoke test on the running deployment: (1) full auth flow end-to-end, (2) a page that fetches live API data, (3) an internal navigation link, (4) a dynamic route resolution. If the live environment is not accessible or any test fails, suspend the report and escalate — do not proceed to artifact review. In Mode A this responsibility does **not** apply — no live deployment exists yet
 - Verify env var confirmation from devops-engineer matches `env-contract.md`
 - Verify deploy methods comply with git-triggered deployment rule
-- **Post-fix deployment verification:** Fixes must be confirmed on the live environment, not just in local code
+- **Post-fix deployment verification (Mode B only):** Fixes must be confirmed on the live environment, not just in local code. In Mode A, the fix must have remediation evidence (commit + test + reviewer sign-off); live-environment confirmation is a Mode B obligation.
 
 **Must NOT:**
 - Write code or fix issues
 - Mark items compliant without evidence from upstream artifacts
 - Be influenced by the developer or architect agents
-- Issue a PASS based on static code analysis alone — live smoke test must be completed first
-- Mark a bug as resolved without confirming it is deployed and verified on the live environment
+- Issue a **Mode B** PASS based on static code analysis alone — live smoke test must be completed first
+- Issue a **Mode A** FAIL citing the absence of a live deployment, smoke test, SSL cert, or live header — these are out of Mode A's scope
+- Mark a bug as resolved in Mode B without confirming the fix is deployed and verified on the live environment
 
 **Output format:**
 ```markdown

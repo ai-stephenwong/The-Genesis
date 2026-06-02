@@ -1,4 +1,4 @@
-<!-- last-reviewed: 2026-03-21 | reviewed-by: retrospective-analyst (omnichat-v1 deployment round) | next-review: 2026-09-21 -->
+<!-- last-reviewed: 2026-06-02 | reviewed-by: The Genesis (tribute omnichat-v12) | next-review: 2026-12-02 -->
 
 # Vercel (Frontend) + Cloudflare (API/Edge) Deployment Best Practices (Company Standard)
 
@@ -50,7 +50,7 @@ If using Vercel Edge Functions (not Node.js runtime):
 Before signing off on architecture for a Vercel + Cloudflare project, confirm:
 
 - [ ] Password hashing: using Web Crypto API PBKDF2-SHA256 (`crypto.subtle`) — **not** `bcrypt` (native) and **not** pure-JS `argon2id` (pure-JS argon2id with m=65536 requires ~200–400ms CPU — far exceeds the 10–30ms Workers CPU limit)
-- [ ] Database connection: using a TCP-based PostgreSQL driver (`pg` / `postgres.js` with `nodejs_compat` flag) for Hyperdrive compatibility — HTTP/WebSocket drivers such as `@neondatabase/serverless` in default mode bypass Hyperdrive's TCP proxy entirely
+- [ ] Database driver strategy chosen and documented (see "Database Driver Strategy" section below): **either** Pattern A (Hyperdrive + TCP driver `pg` / `postgres.js` with `nodejs_compat` flag) **or** Pattern B (Prisma Accelerate + `@prisma/client/edge`, **no** Hyperdrive). Do not mix — Accelerate is HTTP-based and bypasses Hyperdrive's TCP proxy entirely
 - [ ] Encryption / crypto: using Web Crypto API (`crypto.subtle`) — not Node's `crypto`
 - [ ] File handling: using R2 / external storage — **not** `fs`
 - [ ] Environment variables: accessed via Worker `env` object — **not** `process.env`
@@ -151,6 +151,56 @@ vercel deploy --prod
 - [ ] Frontend can reach the API: open the deployed frontend URL, check network tab — no CORS errors, API calls return 200
 - [ ] API returns correct `Access-Control-Allow-Origin` header matching the frontend origin
 - [ ] If custom domains are used, repeat steps 2–5 with the custom domain URLs (replace the `*.vercel.app` / `*.workers.dev` URLs)
+
+---
+
+## Database Driver Strategy — Pattern A vs Pattern B
+
+> Pick **one** pattern per project and stick to it. The two patterns are mutually exclusive — mixing them breaks the connection pool.
+
+### Pattern A — Hyperdrive + TCP driver (preferred when not using Prisma ORM)
+
+- **Driver:** `pg` or `postgres.js` with `nodejs_compat` compatibility flag
+- **Connection:** Cloudflare Hyperdrive binding (`env.DB.connectionString`)
+- **Why:** Hyperdrive provides global connection pooling for TCP-based PostgreSQL clients with no external dependency. Lowest cost, no third-party data-plane hop.
+- **Constraint:** Requires the `nodejs_compat` flag in `wrangler.toml`. Native Node TCP modules are emulated; verify with `wrangler dev`.
+
+### Pattern B — Prisma Accelerate + `@prisma/client/edge` (when Prisma ORM is required)
+
+> Default `@prisma/client` emits CommonJS (`module.exports`). The Workers ES-modules-only runtime rejects it at runtime with:
+> `Uncaught ReferenceError: module is not defined at @prisma/client/default.js`.
+> The fix is the edge entry point + Accelerate extension, **not** Hyperdrive.
+
+- **Driver:** `@prisma/client/edge` + `@prisma/extension-accelerate`
+- **Connection:** Prisma Accelerate (HTTP-based connection pooling provided by Prisma Data Platform)
+- **Why:** Accelerate is the only Prisma-supported path on Workers. It is HTTP-based, so it **bypasses Hyperdrive** entirely — do not also configure a Hyperdrive binding for the same database.
+- **Setup:**
+  ```bash
+  npm install @prisma/client @prisma/extension-accelerate
+  npx prisma generate --schema src/prisma/schema.prisma
+  ```
+  ```ts
+  // ❌ WRONG — breaks in Workers
+  import { PrismaClient } from '@prisma/client';
+  // ✅ CORRECT — works in Workers
+  import { PrismaClient } from '@prisma/client/edge';
+  import { withAccelerate } from '@prisma/extension-accelerate';
+
+  const prisma = new PrismaClient({
+    datasources: { db: { url: env.DATABASE_URL } }
+  }).$extends(withAccelerate()) as unknown as PrismaClient;
+  ```
+- **Trade-off:** Adds Prisma Data Platform as a runtime dependency and a separate billing line. Latency is comparable to Hyperdrive for cache hits, higher for misses.
+- **Health check caveat:** `prisma.$queryRaw\`SELECT 1\`` may return false on a healthy DB when using the edge client + Accelerate. Prefer either a write-then-read probe or `prisma.{table}.findFirst({ take: 1 })` against a known-existing table.
+
+### Decision rule
+
+| Project uses Prisma? | Driver pattern |
+|---|---|
+| No (Drizzle / Kysely / raw SQL) | **Pattern A** — Hyperdrive + `pg`/`postgres.js` |
+| Yes (Prisma ORM required) | **Pattern B** — Prisma Accelerate + `@prisma/client/edge`, **no** Hyperdrive |
+
+Rationale: omnichat-v12 deployed with default `@prisma/client` and failed at runtime with the ES-modules error. After switching to `@prisma/client/edge` + Accelerate (and removing the Hyperdrive binding for that DB), the Worker deployed cleanly.
 
 ---
 
@@ -289,8 +339,11 @@ infrastructure/
 > These bypass all CI checks (tests, SAST, secrets scan, smoke tests) and break
 > pipeline integrity regardless of environment.
 >
-> The **only exception** is §4 (First Deployment URL wiring) — a one-time manual deploy
-> to capture initial service URLs before CI/CD is wired. After that, CI/CD is mandatory.
+> The **only two named exceptions** are:
+> 1. §4 (First Deployment URL wiring) — a one-time manual deploy to capture initial service URLs before CI/CD is wired.
+> 2. **Vercel Build Recovery** (see section below) — when a Vercel project enters a broken internal state (opaque `Unexpected error` with no logs while local builds pass), a one-time manual unlink/relink is required before CI can resume. Treat this as an incident, document it in the decision log, and return to git-push deploys immediately afterward.
+>
+> After either exception, CI/CD is mandatory again.
 
 ```yaml
 # Deployment trigger (the only valid way to deploy staging / production):
@@ -318,6 +371,46 @@ git push origin main       # → triggers production deploy via GitHub Actions
 - Preview deployments on every PR (Vercel) — protect with Cloudflare Access `[8.2]`
 - Production deploy only from `main` branch after all checks pass `[8.32]`
 - Never use `--force` or skip checks in deploy commands `[8.32]`
+
+## Vercel Build Recovery — Named Exception to git-push-only
+
+> **Status:** Named exception (#2) to the deployment trigger rule above. Use only when the criteria below are met. Document every use in the project's decision log.
+
+### When this exception applies
+
+All of the following must be true:
+
+- `vercel --prod` (via CI) fails with: `Error: Unexpected error. Please try again later. ()`
+- The Vercel dashboard shows no build logs for the failed run
+- Local `npm run build` passes cleanly with the same code
+- The first deploy after linking succeeded; subsequent deploys consistently fail
+- The failure persists across at least two CI retries
+
+This signals that the Vercel project's internal state has corrupted. There is no public API to detect or repair this — the only known fix is to delete and relink.
+
+### Recovery procedure (one-time, manual, documented)
+
+1. **Notify the orchestrator and add a decision-log entry** before any destructive action. Include: timestamp, failing CI run URL, the exact error string, and a copy of the current `vercel env ls` output (env var names only — never values).
+2. **Capture current env vars** so they can be re-added on the new project. Use `vercel env pull .env.recovery.{env}` from a trusted machine; treat the resulting file as a secret and delete it after step 5.
+3. **Delete the broken Vercel project:**
+   ```bash
+   vercel rm {project-name} --yes --scope {team}
+   ```
+4. **Remove local link state and re-link:**
+   ```bash
+   rm -rf .vercel
+   vercel link --yes --scope {team}
+   ```
+5. **Re-add env vars on the new project** (ideally via `vercel env add` before the first deploy, so build-time vars are available). Delete `.env.recovery.{env}` once done.
+6. **Trigger a deploy via CI** (`git push` to the appropriate branch) — do **not** finish recovery with a local `vercel --prod`. The exception covers the unlink/relink only; the deploy itself must go through CI.
+7. **Close out the decision-log entry** with the successful CI run URL and confirmation that smoke tests passed.
+
+### Prohibitions during recovery
+
+- Recovery must be run from a CI-equivalent trusted machine (with scoped credentials), not from an ad-hoc developer machine where possible
+- Do not use `--force` or other flag-based bypasses
+- Do not skip env-var recapture — silently losing build-time vars is the most common failure mode after this recovery
+- Caveat: env vars set on the old project are lost on `vercel rm` — re-adding them on the new project is mandatory before the first CI deploy
 
 ## Secrets Management
 `ISO 27001: 8.24, 5.17`

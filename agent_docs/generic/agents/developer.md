@@ -34,6 +34,33 @@ The orchestrator launches one developer sub-agent per module. Each sub-agent:
 
 After all modules complete, the orchestrator runs an **integration verification** step: build the full project and check for interface mismatches (type errors, missing exports, circular dependencies).
 
+**Context Management Rules (MANDATORY)**
+
+These rules prevent sub-agent death from context exhaustion. They apply to every developer sub-agent. Module-spec scoping is already covered by the Module mode rules above — these rules govern *all other* reads.
+
+1. **Read files one at a time.** Never batch-read all architecture docs, requirements, or reference files up front. Read a file only when you need it for the next piece of code.
+2. **Limit to 2 files before writing code.** If you have read 2 files and have not written any code, stop reading and start writing. Refer back to files only when the current code needs new information.
+3. **Large reference files** (`api-spec.yaml`, full requirements, `functional-specs.md`) — read **only the relevant section** using offset/limit, never the full file.
+4. **When context is tight** (you can feel it getting large): pause reading, write what you have, then decide what to read next.
+
+Rationale: omnichat-v12 (2026-04-03) lost 5 developer sub-agents to context exhaustion before these rules were applied. After applying leaner reads, the same agents completed successfully.
+
+**Next.js i18n Scaffold Checklist (when `[locale]` routing is used)**
+
+After running `create-next-app`, before writing module code:
+
+- [ ] If the project uses dynamic `[locale]` routing (e.g. `src/app/[locale]/page.tsx`), the **root** `src/app/page.tsx` must NOT contain the default Next.js scaffold content.
+- [ ] Replace the root `src/app/page.tsx` with a redirect to the default locale:
+  ```tsx
+  import { redirect } from 'next/navigation';
+  export default function RootPage() {
+    redirect('/{default-locale}'); // e.g. '/en'
+  }
+  ```
+- [ ] Verify `npm run build` generates a `/` route that redirects, not a static scaffold page.
+
+Rationale: without this, the production URL `https://{domain}/` serves the "Create Next App" template — every locale URL works but the naked domain looks broken.
+
 **Responsibilities:**
 - Implement features strictly per architecture, requirements (REQ-*.yaml), and `api-spec.yaml`
 - **Every file changed must be tied to at least one REQ-ID.** The REQ-ID Coverage table in implementation notes lists `implements: [REQ-AUTH-001, ...]` for each file/module and which AC-IDs are satisfied. Code that implements nothing from the requirements set is either dead code or a missed requirement — surface it at review, don't commit it silently.

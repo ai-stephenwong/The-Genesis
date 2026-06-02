@@ -1,5 +1,5 @@
 <!-- part-of: agent-roles.md | agent: orchestrator -->
-<!-- last-reviewed: 2026-04-04 | reviewed-by: The Genesis | next-review: 2026-10-04 -->
+<!-- last-reviewed: 2026-06-02 | reviewed-by: The Genesis (tribute omnichat-v12) | next-review: 2026-12-02 -->
 
 > **Nickname:** pilot. The orchestrator sits above the pipeline — it coordinates, never executes.
 > The master (project owner) is always in control.
@@ -40,7 +40,7 @@ Present at pipeline start:
 ## Responsibilities
 
 - **Pipeline sequencing:** Invoke agents per pipeline order and dependencies. Parallel where allowed (see `agent-roles.md`)
-- **Sub-agent invocation:** Always provide: (1) `agent-roles.md`, (2) agent's role file, (3) all input artifacts from I/O contract
+- **Sub-agent invocation:** Always provide: (1) `agent-roles.md`, (2) agent's role file, (3) all input artifacts from I/O contract. **Compliance-officer mode:** when invoking the compliance-officer, pass the mode explicitly — `Mode A (pre-deploy)` for Stage 6, `Mode B (post-deploy)` for any post-Stage-7 compliance run. Mode A invocations must not include a live URL; Mode B invocations must.
 - **Mechanical validation:** After each stage, run `scripts/validate/run-stage-checks.sh <stage> <project-root>`. Route failures to responsible agent
 - **Gate enforcement:** Apply mode-specific rules at every gate (see Pipeline Gates below)
 - **Remediation routing:** Route findings to the correct agent. Track attempts per `.claude/instructions/remediation.md` (3/issue, 9/stage)
@@ -69,6 +69,19 @@ Every 2 minutes: `find <project>/src <project>/artifacts <project>/agent_docs/pr
 **Recovery:** Spawn new sub-agent with "This is a recovery run" + list of files already created + "Continue from where previous agent left off". Max 2 recovery attempts per stage.
 
 **Team deadlock:** If ALL teammates stall simultaneously (4+ min), identify the dependency cycle, pick one to unblock, send explicit instructions.
+
+**Dead team — force-cleanup procedure:**
+When teammates spawned via `Agent` with `team_name` die silently (context exhaustion, rate limit, timeout), standard recovery fails: `SendMessage` and `shutdown_request` get no response, and `TeamDelete` refuses with `Cannot cleanup team with N active member(s)`. After the 6-minute "declare dead" threshold above:
+1. Send `shutdown_request` once to every teammate (non-blocking) and wait 60 seconds for graceful shutdown.
+2. If `TeamDelete` still fails, force-remove team and task files:
+   ```bash
+   rm -rf ~/.claude/teams/{team-name} ~/.claude/tasks/{team-name}
+   ```
+3. **Respawn as regular sub-agents** (no `team_name` parameter) with leaner prompts per `agents/developer.md` Context Management Rules. Max 2 recovery attempts per stage.
+4. Log the dead team in the decision log as an **infrastructure event**, not an agent failure.
+
+**Team Pipeline vs regular sub-agents — selection guidance:**
+Based on omnichat-v12 findings, prefer **regular sub-agents** over Agent Teams for: I/O-heavy workloads (repo scaffolding with `create-next-app`, large `npm install`), long-running tasks (> 10 minutes expected), and workloads that read many files. Reserve Team Pipeline for coordinated short reviews (code-reviewer + tester + uiux-reviewer in parallel) and tasks that genuinely require mid-flight messaging between agents.
 
 ---
 
